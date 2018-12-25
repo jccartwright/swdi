@@ -4,14 +4,14 @@
     Welcome to {{ title }}!
   </h1>
   <button mat-button>Click me!</button> -->
-  <app-header></app-header>
-  <mat-drawer-container class="drawer-container">
-    <mat-drawer class="sidenav-container" mode="side" opened>
-      <app-drawer></app-drawer>
-    </mat-drawer>
-    <mat-drawer-content class="main-container">
-      <app-main></app-main>
-    </mat-drawer-content>
-  </mat-drawer-container>
+<app-header></app-header>
+<mat-drawer-container class="body-container">
+  <mat-drawer mode="side" opened>
+    <app-drawer></app-drawer>
+  </mat-drawer>
+  <mat-drawer-content>
+    <app-main></app-main>
+  </mat-drawer-content>
+</mat-drawer-container>
 <app-footer></app-footer>
 <router-outlet></router-outlet>

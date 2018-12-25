@@ -8,7 +8,29 @@
     </div>
   </mat-expansion-panel>
 
-  <mat-expansion-panel>
+  <div class="form-control-container">
+    <app-location></app-location>
+    <!--
+    <form>
+    FORM CONTROLS GO HERE
+      <div class="location-container" >
+          <mat-form-field class="search-form-field" hintLabel="Enter address, city, zip or 'lat,lon' coordinates: (ex: 34.5,-90.5)">
+            <input name="location" matInput maxlength="100" placeholder="Search by location" [(ngModel)]="location">
+          </mat-form-field>
+        
+          <mat-form-field>
+            <mat-select placeholder="Select me">
+              <mat-option value="option">Option</mat-option>
+            </mat-select>
+            <mat-hint align="end">Here's the dropdown arrow ^</mat-hint>
+          </mat-form-field>
+      </div>
+    </form>
+  -->
+  </div>
+    
+    
+    <mat-expansion-panel>
     <mat-expansion-panel-header>
       <mat-panel-title>Bulk Download</mat-panel-title>
       <!-- <mat-panel-description>
@@ -27,22 +49,7 @@
     </div>
   </mat-expansion-panel>
 
-  <div>
-      <div class="location-container">
-          <!-- <mat-form-field hintLabel="Enter address, city, zip or 'lat,lon' coordinates: (ex: 34.5,-90.5)">
-            <input matInput #input maxlength="100" placeholder="Search by location">
-          </mat-form-field> -->
-        
-          <!-- <mat-form-field>
-            <mat-select placeholder="Select me">
-              <mat-option value="option">Option</mat-option>
-            </mat-select>
-            <mat-hint align="end">Here's the dropdown arrow ^</mat-hint>
-          </mat-form-field> -->
-      </div>
-
-
-  </div>
+  
   
   <mat-expansion-panel>
       <mat-expansion-panel-header>

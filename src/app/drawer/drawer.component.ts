@@ -6,6 +6,7 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./drawer.component.css']
 })
 export class DrawerComponent implements OnInit {
+  location = 'testme';
 
   constructor() { }
 

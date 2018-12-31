@@ -5,5 +5,5 @@
 
     <button (click)="lookupLocation(location.value)">Locate</button>
 
-    <div *ngIf="coordinates">{{coordinates.x.toFixed(3)}}, {{coordinates.y.toFixed(3)}}</div>
+    <div *ngIf="coordinates">{{coordinates?.x.toFixed(3)}}, {{coordinates?.y.toFixed(3)}}</div>
 </div>

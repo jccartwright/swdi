@@ -1,9 +1,0 @@
-<div class="location-container">
-  <input #location type="text" size="48"
-    (keyup.enter)="lookupLocation(location.value)"
-    (blur)="lookupLocation(location.value); location.value='' ">
-
-    <button (click)="lookupLocation(location.value)">Locate</button>
-
-    <div *ngIf="coordinates">{{coordinates?.x.toFixed(3)}}, {{coordinates?.y.toFixed(3)}}</div>
-</div>

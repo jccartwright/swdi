@@ -5,73 +5,82 @@
   <meta charset="utf-8">
   <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Severe Weather Data Inventory</title>
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://js.arcgis.com/4.12/esri/css/main.css">
+  <link rel="stylesheet" href="./css/app.css"
+  
   <style>
-    html, body {
-      padding: 0;
-      margin: 0;
-      height: 100%;
-      width: 100%;
-      font-family: "Avenir Next W00";
-    }
-    .header {
-      grid-area: header;
-      background-color: #0079c1;
-    }
-
-    .footer {
-        grid-area: footer;
-        background-color: #0079c1;
-    }
-
-    .sidebar {
-      grid-area: sidebar;
-      background-color: #333;
-    }
-    .map {
-      grid-area: map;
-    }
-    .wrapper {
-      display: grid;
-      grid-template-rows: 25%  25% auto, 25%;
-      grid-template-areas:
-       "header"
-       "sidebar"
-       "map"
-       "footer";
-      width: 100vw;
-      height: 100vh;
-    }
-    .box {
-      color: #fff;
-      padding: 10px;
-      font-size: 20px; 
-    }
-    @media only screen and (min-width: 544px)  {
-      .wrapper {
-        grid-template-columns: 20% auto;
-        grid-template-rows: 60px  auto 60px;
-        grid-template-areas:
-          "header   header"
-          "sidebar  map"
-          "footer   footer";
-        }
-      }
   </style>
 
-  <link rel="stylesheet" href="https://js.arcgis.com/4.12/esri/css/main.css">
-
+  <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script> -->
   <script src="https://js.arcgis.com/4.12/"></script>
   <script src="js/app.js"></script>
-
-  
-
 </head>
-<body>
+<body onload="init();" >
     <div class="wrapper">
-        <div class="box header" id="titleDiv">Header</div>
-        <div class="box sidebar">Sidebar</div>
-        <div class="map" id="viewDiv"></div>
-        <div class="box footer" id="footerDiv">Footer</div>
+      <div class="box header" id="titleDiv">Header</div>
+      <div class="box sidebar">
+
+        <div class="input-group" style="padding: 15px;">
+          <button id="getDataButton" type="button" style='margin-left: 10px;' class="btn btn-primary">Get Data</button>
+          <button id="resetButton" type="button" style='margin-left: 30px;' class="btn btn-primary" onclick="reset();">Reset</button>
+        </div>
+
+        <input type="text" class="form-control" id="geolocationInput" readonly onclick="alert('type an address or click on the map');">
+          
+        <div class="input-group">
+          <div class="input-group-prepend" style="padding-right: 5px; display: inline-block">
+            <label class="input-group-text swdi-select" for="yearSelect">Year</label>
+          </div>
+          <select style="background-color: grey;" class="custom-select swdi-select" id="yearSelect">
+          <!-- options populated programatically -->
+          </select>
+        </div>
+
+        <div class="input-group">
+            <div class="input-group-prepend" style="padding-right: 5px; display: inline-block">
+              <label class="input-group-text swdi-select" for="datasetSelect">Dataset</label>
+            </div>
+            <select style="background-color: grey;" class="custom-select swdi-select" id="datasetSelect">
+              <option value="nx3structure">Filtered Storm Cells</option>
+              <option value="nx3structure_all">All Storm Cells</option>
+              <option value="nx3hail">Filtered Hail Signatures</option>
+              <option value="nx3hail_all">All Hail Signatures</option>
+              <option value="nx3meso">Mesocyclone Signatures</option>
+              <option value="nx3mda">Digital Mesocyclone Detection</option>
+              <option value="nx3tvs">Tornado Signatures</option>
+              <option value="plsr">Preliminary Local Storm Reports</option>
+              <option value="nldn">Lightning Strikes</option>
+            </select>
+            <div class="input-group-append" style="padding-left: 5px; display: inline-block">
+                <label style="font-size: large" class="input-group-text swdi-select" for="datasetSelect" onclick="showDatasetHelp();">?</label>
+            </div>
+        </div>
+
+        <div id="datasetHelp" class="well" style="font-size:small; background-color: gray; display: none">
+          <div>
+              <ul>
+              <li>Filtered Storm Cells (Max Reflectivity >=45dBZ) from NEXRAD (Level-III Storm Structure Product)</li>
+              <li>All Storm Cells from NEXRAD (Level-III Storm Structure Product)</li>
+              <li>Filtered Hail Signatures (Max Size > 0 and Probability = 100%) from NEXRAD (Level-III Hail Product) </li>
+              <li>All Hail Signatures from NEXRAD (Level-III Hail Product)</li>
+              <li>Mesocyclone Signatures from NEXRAD (Level-III Meso Product)</li>
+              <li>Digital Mesocyclone Detection Algorithm from NEXRAD (Level-III MDA Product)</li>
+              <li>Tornado Signatures from NEXRAD (Level-III TVS Product)</li>
+              <li>Preliminary Local Storm Reports from the NOAA National Weather Service</li>
+              <li>Lightning Strikes from Vaisala NLDN</li>
+              </ul>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" onclick="hideDatasetHelp();">close</button>
+        </div>
+      </div> <!-- end sidebar -->
+
+      <div class="map" id="viewDiv"></div>
+      <div class="box footer" id="footerDiv">Footer</div>
     </div>
 </body>
 </html>
+
+
+

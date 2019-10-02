@@ -2,12 +2,13 @@ require([
     "dojo/on", 
     "dojo/dom",
     "esri/Graphic",
+    "esri/layers/GraphicsLayer",
     "esri/Map",
     "esri/views/MapView",
     "esri/request",
     "esri/widgets/Search",
     "esri/geometry/support/webMercatorUtils"
-], function(on, dom, Graphic, Map, MapView, esriRequest, Search, webMercatorUtils) {
+], function(on, dom, Graphic, GraphicsLayer, Map, MapView, esriRequest, Search, webMercatorUtils) {
     const CONUS_CENTROID = [-98.5795, 39.8283];
 
     // WARNING: global variable
@@ -19,6 +20,11 @@ require([
     on(getDataButton, "click", getSummaryData);
     var resetButton = dom.byId('resetButton');
     on(resetButton, "click", reset);
+    var dateSelect = dom.byId('dateSelect');
+    on(dateSelect, "change", dateChangeHandler);
+    // one style better than another?
+    //dateSelect.addEventListener("change", dateChangeHandler);
+
 
     // TODO fill symbol not working
     // Create a symbol for rendering the tile boundary graphic
@@ -30,12 +36,26 @@ require([
           color: [255, 0, 0],
           width: 1
       }
-  };
+    };
+
+    var markerSymbol = {
+      type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+      color: [226, 119, 40],
+      outline: {
+        // autocasts as new SimpleLineSymbol()
+        color: [255, 255, 255],
+        width: 2
+      }
+    };
 
   // setup map and view
   var map = new Map({
     basemap: "streets" 
   });
+
+  // points for the select dataset and date
+  var pointsLayer = new GraphicsLayer();
+  map.add(pointsLayer);
 
   var view = new MapView({
       container: "viewDiv",
@@ -79,7 +99,7 @@ require([
   // supporting functions
   // 
   function getSummaryData(evt) {
-    // console.log('inside getSummaryData()...', evt);
+    console.log('inside getSummaryData()...', evt);
     if (! geolocation) {
       alert("please select a geolocation");
       return;
@@ -102,6 +122,23 @@ require([
       var summaryData = response.data;
       // TODO populate date select
       console.log(summaryData);
+      addDateSelectOptions(summaryData.result);
+    });
+  }
+
+
+  function addDateSelectOptions(results) {
+    var dateSelect = document.getElementById('dateSelect');
+
+    // remove any previously existing options
+
+    // add options corresponding to most recent search results
+    results.forEach(function(result) {
+      console.log(result.DAY, result.FCOUNT);
+      var option = document.createElement("option");
+      option.value = result.DAY;
+      option.text = result.DAY + ' ('+ result.FCOUNT + ' events)';
+      dateSelect.add(option);
     });
   }
 
@@ -151,6 +188,105 @@ require([
 
     view.goTo({ target: CONUS_CENTROID, zoom: 3});
     view.graphics.removeAll();
+  }
+
+
+  function dateChangeHandler(evt) {
+    console.log('inside dateChangeHandler...');
+    var day = evt.target.options[evt.target.selectedIndex].value;
+
+    getDailyData(day);
+  }
+
+
+  function getDailyData(day) {
+    console.log('inside getDailyData with ',day);
+
+    // e.g. https://www.ncdc.noaa.gov/swdiws/csv/nx3structure/20190601?tile=-105.117,39.678
+
+    // reformat day value into yyyymmdd
+    var date = day.split('-').join('');
+
+    var datasetSelect = document.getElementById('datasetSelect');
+    var dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
+
+
+    var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + date;
+    console.log(url);
+
+    esriRequest(url, {
+      query: {
+        tile: geolocation
+      },
+      responseType: "json"
+    }).then(function(response){
+      var dailyData = response.data;
+      // console.log(dailyData.result);
+
+      drawPoints(dailyData.result);
+    });
+  }
+
+  var pointPopupTemplate = {
+    // autocasts as new PopupTemplate()
+    title: "{ztime}",
+    content: [
+      {
+        type: "fields",
+        fieldInfos: [
+          {
+            fieldName: "max_reflect"
+          },
+          {
+            fieldName: "cell_id"
+          },
+          {
+            fieldName: "wsr_id"
+          }
+        ]
+      }
+    ]
+  };
+
+  function drawPoints(results) {
+    console.log('inside draw points with '+results.length+' results...');
+    // clear any existing graphics
+    pointsLayer.removeAll();
+
+    console.log(results);
+
+    // generate list of Points and Graphics
+    var graphics = [];
+    results.forEach(function(result) {
+      console.log(result);
+      // bit of a hack to pull lon, lat from WKT string. depends on format like: "POINT (-105.083963633382 39.8283363414173)"
+      var coords = result.SHAPE.substring(7, result.SHAPE.length -1).split(' ');
+      console.log(coords);
+      
+      console.log(graphics.length);
+      graphics.push(new Graphic({
+          geometry: {
+            type: "point", // autocasts as new Point()
+            longitude: coords[0],
+            latitude: coords[1]
+          },
+          symbol: markerSymbol,
+          attributes: {
+            max_reflect: result.MAX_REFLECT,
+            vil: result.VIL,
+            wsr_id: result.WSR_ID,
+            cell_id: result.CELL_ID,
+            azimuth: result.AZIMUTH,
+            range: result.RANGE,
+            ztime: result.ZTIME
+          },
+          popupTemplate: pointPopupTemplate
+        })
+      );
+      console.log(graphics.length);
+    });
+    console.log(graphics);
+    pointsLayer.addMany(graphics);
   }
 });
 

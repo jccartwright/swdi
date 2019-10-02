@@ -1,12 +1,31 @@
 require([
     "dojo/on", 
     "dojo/dom",
+    "esri/Graphic",
+    "esri/layers/GraphicsLayer",
     "esri/Map",
     "esri/views/MapView",
     "esri/request",
-    "esri/widgets/Search"
-], function(on, dom, Map, MapView, esriRequest, Search) {
+    "esri/widgets/Search",
+    "esri/geometry/support/webMercatorUtils"
+], function(on, dom, Graphic, GraphicsLayer, Map, MapView, esriRequest, Search, webMercatorUtils) {
     var map = new Map({ basemap: "gray" });
+    
+    var graphicsLayer = new GraphicsLayer();
+    map.add(graphicsLayer);
+
+      // Create a symbol for rendering the graphic
+    var fillSymbol = {
+        type: "simple-fill", // autocasts as new SimpleFillSymbol()
+        color: [255,0,0, 0.5],
+        outline: {
+            // autocasts as new SimpleLineSymbol()
+            color: [255, 0, 0],
+            width: 1
+        }
+    };
+
+    
 
     var view = new MapView({
         container: "viewDiv",
@@ -14,6 +33,7 @@ require([
         zoom: 3,
         center: [-98.5795, 39.8283]  //center of CONUS
     });
+    
 
     var searchWidget = new Search({
         view: view
@@ -78,10 +98,85 @@ require([
       });
     }
 
-  var getDataButton = dom.byId('getDataButton');
-  on(getDataButton, "click", getSummaryData);
+    var getDataButton = dom.byId('getDataButton');
+    on(getDataButton, "click", getSummaryData);
+
+    // TODO draw tile boundaries on map
+    function setGeolocation(longitude, latitude) {
+        var lat = Math.round(latitude * 1000) / 1000;
+        var lon = Math.round(longitude * 1000) / 1000;
+        addTileBoundary(lon, lat);
+        geolocation = lon + "," + lat;
+        document.getElementById('geolocationInput').value = geolocation;
+    }
 
 
+    function addTileBoundary(longitude, latitude) {
+        var lat = Math.round(latitude * 10) / 10;
+        var lon = Math.round(longitude * 10) / 10;
+
+        var minx = (lon - 0.05).toFixed(2);
+        var miny = (lat - 0.05).toFixed(2);
+        var maxx = (lon + 0.05).toFixed(2);
+        var maxy = (lat + 0.05).toFixed(2);
+
+        var fillSymbol = {
+            type: "simple-fill", // autocasts as new SimpleFillSymbol()
+            color: "red",
+            style: "forward-diagonal",
+            outline: {
+                // autocasts as new SimpleLineSymbol()
+                color: "red",
+                width: 1
+            }
+        };
+
+
+        var tileBoundary = {
+            type: "polygon",
+            rings: [
+                [minx, miny],
+                [maxx, miny],
+                [maxx, maxy],
+                [minx, maxy],
+                [minx, miny]
+            ]
+        };
+/*        
+        var graphic = new Graphic({
+            geometry: {
+                type: "polygon",
+                rings: [
+                    [minx, miny],
+                    [maxx, miny],
+                    [maxx, maxy],
+                    [minx, maxy],
+                    [minx, miny]
+                ]
+            },
+            symbol: fillSymbol
+        });
+
+     */   
+        var graphic = new Graphic({
+            geometry: {
+                type: "polygon",
+                rings: [
+                    [10, 10],
+                    [20, 10],
+                    [20, 20],
+                    [10, 20]
+                ]
+            },
+            symbol: fillSymbol
+        });
+        console.log(graphic);
+
+        // remove any existing graphics
+        //view.graphics.removeAll();
+        //view.graphics.add(graphic);
+        graphicsLayer.add(graphic);
+    }
 });
 
 // WARNING: global variable
@@ -92,16 +187,6 @@ function init() {
   populateYearSelect();
 }
 
-// TODO draw tile boundaries on map
-function setGeolocation(longitude, latitude) {
-  var lat = Math.round(latitude * 1000) / 1000;
-  var lon = Math.round(longitude * 1000) / 1000;
-  // TODO: why is this better/worse?
-  // lat = event.mapPoint.latitude.toFixed(3);
-  geolocation = lon + "," + lat;
-  document.getElementById('geolocationInput').value = geolocation;
-  console.log(lon, lat);
-}
 
 function populateYearSelect() {
   var currentYear = new Date().getFullYear();

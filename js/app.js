@@ -64,16 +64,16 @@ require([
       center: CONUS_CENTROID
   });
 
-  view.on("click", function(event) {
-    // don't need popup since just collecting the coordinate
-    view.popup.autoOpenEnabled = false;
+//   view.on("click", function(event) {
+//     // don't need popup since just collecting the coordinate
+//     view.popup.autoOpenEnabled = false;
 
-    // Get the coordinates of the click on the map view
-    setGeolocation(event.mapPoint.longitude, event.mapPoint.latitude);
+//     // Get the coordinates of the click on the map view
+//     setGeolocation(event.mapPoint.longitude, event.mapPoint.latitude);
 
-    // match the zoom level used by Search widget
-    view.goTo({ target: event.mapPoint, zoom: 12}, { duration: 2000 } )
-  }); 
+//     // match the zoom level used by Search widget
+//     view.goTo({ target: event.mapPoint, zoom: 12}, { duration: 2000 } )
+//   }); 
 
   // geocode widget
   var searchWidget = new Search({
@@ -131,6 +131,7 @@ require([
     var dateSelect = document.getElementById('dateSelect');
 
     // remove any previously existing options
+    clearDateSelect();
 
     // add options corresponding to most recent search results
     results.forEach(function(result) {
@@ -140,6 +141,20 @@ require([
       option.text = result.DAY + ' ('+ result.FCOUNT + ' events)';
       dateSelect.add(option);
     });
+
+    // fire the handler to display the first day
+    dateChangeHandler();
+  }
+
+
+  function clearDateSelect() {
+    console.log('inside clearDateSelect...');
+    var dateSelect = document.getElementById('dateSelect');
+    
+    var i;
+    for(i = dateSelect.options.length - 1 ; i >= 0 ; i--) {
+        dateSelect.remove(i);
+    }
   }
 
 
@@ -188,12 +203,16 @@ require([
 
     view.goTo({ target: CONUS_CENTROID, zoom: 3});
     view.graphics.removeAll();
+    pointsLayer.removeAll();
+    clearDateSelect();
   }
 
 
   function dateChangeHandler(evt) {
     console.log('inside dateChangeHandler...');
-    var day = evt.target.options[evt.target.selectedIndex].value;
+    // var day = evt.target.options[evt.target.selectedIndex].value;
+    var dateSelect = document.getElementById('dateSelect');
+    var day = dateSelect.options[dateSelect.selectedIndex].value;
 
     getDailyData(day);
   }

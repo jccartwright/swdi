@@ -50,7 +50,7 @@ grid-area: map;
 
 @media only screen and (min-width: 544px)  {
 .wrapper {
-    grid-template-columns: 300px auto;
+    grid-template-columns: 310px auto;
     grid-template-rows: 60px  auto 60px;
     grid-template-areas:
     "header   header"

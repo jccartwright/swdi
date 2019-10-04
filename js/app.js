@@ -30,7 +30,7 @@ require([
     // Create a symbol for rendering the tile boundary graphic
     var fillSymbol = {
       type: "simple-fill", // autocasts as new SimpleFillSymbol()
-      color: [255,0,0, 0.5],
+      color: [255,255,0, 0.2],
       outline: {
           // autocasts as new SimpleLineSymbol()
           color: [255, 0, 0],
@@ -64,6 +64,7 @@ require([
       center: CONUS_CENTROID
   });
 
+// view click conflicts w/ the popup on Graphic  
 //   view.on("click", function(event) {
 //     // don't need popup since just collecting the coordinate
 //     view.popup.autoOpenEnabled = false;
@@ -91,7 +92,6 @@ require([
       if (resultGraphic) {
         setGeolocation(resultGraphic.geometry.longitude, resultGraphic.geometry.latitude);
       }
-      console.log(view.zoom);
   });
 
 
@@ -99,7 +99,7 @@ require([
   // supporting functions
   // 
   function getSummaryData(evt) {
-    console.log('inside getSummaryData()...', evt);
+    // console.log('inside getSummaryData()...', evt);
     if (! geolocation) {
       alert("please select a geolocation");
       return;
@@ -120,8 +120,9 @@ require([
       responseType: "json"
     }).then(function(response){
       var summaryData = response.data;
-      // TODO populate date select
-      console.log(summaryData);
+      // console.log(summaryData);
+      
+      // populate date select
       addDateSelectOptions(summaryData.result);
     });
   }
@@ -135,7 +136,6 @@ require([
 
     // add options corresponding to most recent search results
     results.forEach(function(result) {
-      console.log(result.DAY, result.FCOUNT);
       var option = document.createElement("option");
       option.value = result.DAY;
       option.text = result.DAY + ' ('+ result.FCOUNT + ' events)';
@@ -148,7 +148,7 @@ require([
 
 
   function clearDateSelect() {
-    console.log('inside clearDateSelect...');
+    // console.log('inside clearDateSelect...');
     var dateSelect = document.getElementById('dateSelect');
     
     var i;
@@ -177,14 +177,15 @@ require([
       var maxx = (lon + 0.05).toFixed(2);
       var maxy = (lat + 0.05).toFixed(2);
 
+      // ring must be in CW order for fill to work.
       var graphic = new Graphic({
           geometry: {
               type: "polygon",
               rings: [
                   [minx, miny],
-                  [maxx, miny],
+                  [minx, maxy],
                   [maxx, maxy],
-                  [minx, maxy]
+                  [maxx, miny]
               ]
           },
           symbol: fillSymbol
@@ -194,7 +195,11 @@ require([
       view.graphics.removeAll();
 
       view.graphics.add(graphic);
+
+      // re-center on grid
+      view.goTo({ target: graphic.geometry.center, zoom: 12});
   }
+
 
   function reset() {
     // console.log('inside reset...');
@@ -209,7 +214,7 @@ require([
 
 
   function dateChangeHandler(evt) {
-    console.log('inside dateChangeHandler...');
+    // console.log('inside dateChangeHandler...');
     // var day = evt.target.options[evt.target.selectedIndex].value;
     var dateSelect = document.getElementById('dateSelect');
     var day = dateSelect.options[dateSelect.selectedIndex].value;
@@ -219,9 +224,7 @@ require([
 
 
   function getDailyData(day) {
-    console.log('inside getDailyData with ',day);
-
-    // e.g. https://www.ncdc.noaa.gov/swdiws/csv/nx3structure/20190601?tile=-105.117,39.678
+    // console.log('inside getDailyData with ',day);
 
     // reformat day value into yyyymmdd
     var date = day.split('-').join('');
@@ -229,9 +232,9 @@ require([
     var datasetSelect = document.getElementById('datasetSelect');
     var dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
 
-
+    // e.g. https://www.ncdc.noaa.gov/swdiws/csv/nx3structure/20190601?tile=-105.117,39.678
     var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + date;
-    console.log(url);
+    // console.log(url);
 
     esriRequest(url, {
       query: {
@@ -268,21 +271,15 @@ require([
   };
 
   function drawPoints(results) {
-    console.log('inside draw points with '+results.length+' results...');
+    // console.log('inside draw points with '+results.length+' results...');
     // clear any existing graphics
     pointsLayer.removeAll();
-
-    console.log(results);
 
     // generate list of Points and Graphics
     var graphics = [];
     results.forEach(function(result) {
-      console.log(result);
       // bit of a hack to pull lon, lat from WKT string. depends on format like: "POINT (-105.083963633382 39.8283363414173)"
       var coords = result.SHAPE.substring(7, result.SHAPE.length -1).split(' ');
-      console.log(coords);
-      
-      console.log(graphics.length);
       graphics.push(new Graphic({
           geometry: {
             type: "point", // autocasts as new Point()
@@ -302,9 +299,7 @@ require([
           popupTemplate: pointPopupTemplate
         })
       );
-      console.log(graphics.length);
     });
-    console.log(graphics);
     pointsLayer.addMany(graphics);
   }
 });
@@ -314,7 +309,7 @@ require([
 //
 
 function init() {
-  console.log('inside init...');
+  // console.log('inside init...');
   populateYearSelect();
   
 }

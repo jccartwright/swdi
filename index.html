@@ -20,8 +20,9 @@
 <body onload="init();" >
     <div class="wrapper">
       <div class="box header" id="titleDiv">Header</div>
-      <div class="box sidebar">
 
+      <!-- start sidebar -->
+      <div class="box sidebar">
         <div class="input-group" style="padding: 15px;">
           <button id="getDataButton" type="button" style='margin-left: 10px;' class="btn btn-primary">Get Data</button>
           <button id="resetButton" type="button" style='margin-left: 30px;' class="btn btn-primary">Reset</button>
@@ -84,9 +85,13 @@
             </select>
         </div>
   
+        <div id="messagePanel" class="well">
+        </div>
+        
       </div> <!-- end sidebar -->
 
       <div class="map" id="viewDiv"></div>
+
       <div class="box footer" id="footerDiv">Footer</div>
     </div>
 </body>

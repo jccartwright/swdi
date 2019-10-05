@@ -113,6 +113,7 @@ require([
     var endYear = startYear + 1;
     var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + startYear + '0101:' + endYear + '0101';
 
+    displayMessage("retrieving summary data for "+startYear+". Please standby...");
     esriRequest(url, {
       query: {
         stat: "tilesum:" + geolocation
@@ -120,11 +121,23 @@ require([
       responseType: "json"
     }).then(function(response){
       var summaryData = response.data;
-      // console.log(summaryData);
+      console.log(summaryData);
       
       // populate date select
       addDateSelectOptions(summaryData.result);
+
+      var stats = countSummaryData(summaryData.result);
+      displayMessage("data retrieved - found "+stats.totalEvents+" events across "+stats.numberOfDays+" days.");
     });
+  }
+
+
+  function countSummaryData(results) {
+    totalEvents = 0;
+    results.forEach(function(result) {
+        totalEvents = totalEvents + parseInt(result.FCOUNT);
+    });
+    return({'numberOfDays': results.length, 'totalEvents': totalEvents});
   }
 
 
@@ -165,6 +178,7 @@ require([
       addTileBoundary(lon, lat);
       geolocation = lon + "," + lat;
       document.getElementById('geolocationInput').value = geolocation;
+      displayMessage("coordinates "+geolocation+" selected.<br>Please click the 'Get Data' button");
   }
 
 
@@ -210,6 +224,7 @@ require([
     view.graphics.removeAll();
     pointsLayer.removeAll();
     clearDateSelect();
+    displayMessage(welcomeMessage);
   }
 
 
@@ -232,6 +247,7 @@ require([
     var datasetSelect = document.getElementById('datasetSelect');
     var dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
 
+    displayMessage("retrieving data for "+dataset+" on "+day+". Please standby...");
     // e.g. https://www.ncdc.noaa.gov/swdiws/csv/nx3structure/20190601?tile=-105.117,39.678
     var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + date;
     // console.log(url);
@@ -243,8 +259,10 @@ require([
       responseType: "json"
     }).then(function(response){
       var dailyData = response.data;
-      // console.log(dailyData.result);
+      console.log(dailyData.result);
 
+      displayMessage(dailyData.result.length+' events retrieved.');
+        
       drawPoints(dailyData.result);
     });
   }
@@ -307,11 +325,18 @@ require([
 //
 // the follow don't have any JSAPI dependencies and are outside the module loading callback
 //
+var welcomeMessage = "Welcome to NOAA's Severe Weather Data Inventory.<br>Begin by searching for a location of interest...";
 
 function init() {
   // console.log('inside init...');
   populateYearSelect();
-  
+  displayMessage(welcomeMessage);
+}
+
+
+function displayMessage(message) {
+    var messagePanel = document.getElementById("messagePanel");
+    messagePanel.innerHTML = message;
 }
 
 

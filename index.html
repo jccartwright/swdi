@@ -8,6 +8,10 @@
 
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
   <link rel="stylesheet" href="https://js.arcgis.com/4.12/esri/css/main.css">
+  <!-- <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.12/esri/themes/light/main.css"
+    /> -->
   <link rel="stylesheet" href="./css/app.css"
   
   <style>
@@ -19,7 +23,7 @@
 </head>
 <body onload="init();" >
     <div class="wrapper">
-      <div class="box header" id="titleDiv">Header</div>
+      <div class="box header" id="titleDiv">NOAA's Severe Weather Data Inventory</div>
 
       <!-- start sidebar -->
       <div class="box sidebar">
@@ -28,7 +32,7 @@
           <button id="resetButton" type="button" style='margin-left: 30px;' class="btn btn-primary">Reset</button>
         </div>
 
-        <input type="text" class="form-control" id="geolocationInput" readonly onclick="alert('type an address or click on the map');">
+        <!-- <input type="text" class="form-control" id="geolocationInput" readonly onclick="alert('type an address or click on the map');"> -->
           
         <div class="input-group">
           <div class="input-group-prepend" style="padding-right: 5px; display: inline-block">
@@ -94,6 +98,10 @@
 
       <div class="box footer" id="footerDiv">Footer</div>
     </div>
+    <div id="select-by-polygon" class="esri-widget esri-widget--button esri-widget esri-interactive" title="Select features by polygon">
+      <span class="esri-icon-locate"></span>
+    </div>
+    <div id="tooltip" role="tooltip" style="display:none;"></div>
 </body>
 </html>
 

@@ -22,6 +22,8 @@ require([
     on(resetButton, "click", reset);
     var dateSelect = dom.byId('dateSelect');
     on(dateSelect, "change", dateChangeHandler);
+    var dateSelect = dom.byId('datasetSelect');
+    on(datasetSelect, "change", getSummaryData);
     // one style better than another?
     //dateSelect.addEventListener("change", dateChangeHandler);
 
@@ -54,7 +56,7 @@ require([
   });
 
   // points for the select dataset and date
-  var pointsLayer = new GraphicsLayer();
+  var pointsLayer = new GraphicsLayer({title: 'events'});
   map.add(pointsLayer);
 
   var view = new MapView({
@@ -64,17 +66,43 @@ require([
       center: CONUS_CENTROID
   });
 
+  view.ui.add("select-by-polygon", "top-left");
+  const selectButton = document.getElementById("select-by-polygon");
+  selectButton.addEventListener("click", function() {
+      console.log('button click');
+  });
+
+  const tooltip = document.getElementById("tooltip");
+view.on("pointer-move", event => {
+    const { x, y } = event;
+    view.hitTest(event).then(({ results }) => {
+        // points will always fall w/in rectangle so there will be 2 results when over point
+        if (results.length > 1 && results[1].graphic.layer.title == 'events') {
+            var marker = results[1].graphic;
+            console.log(results[1].graphic); 
+            tooltip.style.display = "block";
+            tooltip.style.top = `${y - 120}px`;
+            tooltip.style.left = `${x - 260/2}px`;
+            var att = marker.attributes;
+            tooltip.innerHTML = `Time(UTC): ${att.ztime}<br>Radar ID: ${att.wsr_id}<br>DBZ: ${att.max_reflect}<br>VIL:${att.vil} kg/m&sup2;<br>Azimuth: ${att.azimuth}&deg;<br>Range: ${att.range} nm<br>lat/lon: ${marker.geometry.latitude.toFixed(3)}, ${marker.geometry.longitude.toFixed(3)} `;
+            
+        } else {
+            tooltip.style.display = "none";
+        }
+    });
+});
+
 // view click conflicts w/ the popup on Graphic  
-//   view.on("click", function(event) {
-//     // don't need popup since just collecting the coordinate
-//     view.popup.autoOpenEnabled = false;
+  view.on("click", function(event) {
+    // don't need popup since just collecting the coordinate
+    view.popup.autoOpenEnabled = false;
 
-//     // Get the coordinates of the click on the map view
-//     setGeolocation(event.mapPoint.longitude, event.mapPoint.latitude);
+    // Get the coordinates of the click on the map view
+    setGeolocation(event.mapPoint.longitude, event.mapPoint.latitude);
 
-//     // match the zoom level used by Search widget
-//     view.goTo({ target: event.mapPoint, zoom: 12}, { duration: 2000 } )
-//   }); 
+    // match the zoom level used by Search widget
+    view.goTo({ target: event.mapPoint, zoom: 12}, { duration: 2000 } )
+  }); 
 
   // geocode widget
   var searchWidget = new Search({
@@ -112,7 +140,7 @@ require([
     var startYear = parseInt(yearSelect.options[yearSelect.selectedIndex].value);
     var endYear = startYear + 1;
     var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + startYear + '0101:' + endYear + '0101';
-
+    console.log("retrieving summary data for "+startYear, url);
     displayMessage("retrieving summary data for "+startYear+". Please standby...");
     esriRequest(url, {
       query: {
@@ -121,7 +149,7 @@ require([
       responseType: "json"
     }).then(function(response){
       var summaryData = response.data;
-      console.log(summaryData);
+    //   console.log(summaryData);
       
       // populate date select
       addDateSelectOptions(summaryData.result);
@@ -177,7 +205,7 @@ require([
       var lon = Math.round(longitude * 1000) / 1000;
       addTileBoundary(lon, lat);
       geolocation = lon + "," + lat;
-      document.getElementById('geolocationInput').value = geolocation;
+    //   document.getElementById('geolocationInput').value = geolocation;
       displayMessage("coordinates "+geolocation+" selected.<br>Please click the 'Get Data' button");
   }
 
@@ -218,8 +246,9 @@ require([
   function reset() {
     // console.log('inside reset...');
     geolocation = null;
-    document.getElementById('geolocationInput').value = geolocation;
-
+    // document.getElementById('geolocationInput').value = geolocation;
+    document.getElementById('datasetSelect').selectedIndex = 0;
+    
     view.goTo({ target: CONUS_CENTROID, zoom: 3});
     view.graphics.removeAll();
     pointsLayer.removeAll();
@@ -232,6 +261,10 @@ require([
     // console.log('inside dateChangeHandler...');
     // var day = evt.target.options[evt.target.selectedIndex].value;
     var dateSelect = document.getElementById('dateSelect');
+    if (dateSelect.options.length == 0) {
+        alert('You must first retrieve data for the year');
+        return;
+    }
     var day = dateSelect.options[dateSelect.selectedIndex].value;
 
     getDailyData(day);
@@ -248,9 +281,10 @@ require([
     var dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
 
     displayMessage("retrieving data for "+dataset+" on "+day+". Please standby...");
+
     // e.g. https://www.ncdc.noaa.gov/swdiws/csv/nx3structure/20190601?tile=-105.117,39.678
     var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + date;
-    // console.log(url);
+    console.log("retrieving data for "+dataset+" on "+day, url);
 
     esriRequest(url, {
       query: {
@@ -259,7 +293,7 @@ require([
       responseType: "json"
     }).then(function(response){
       var dailyData = response.data;
-      console.log(dailyData.result);
+    //   console.log(dailyData.result);
 
       displayMessage(dailyData.result.length+' events retrieved.');
         
@@ -314,7 +348,7 @@ require([
             range: result.RANGE,
             ztime: result.ZTIME
           },
-          popupTemplate: pointPopupTemplate
+        //   popupTemplate: pointPopupTemplate
         })
       );
     });

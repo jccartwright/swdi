@@ -83,3 +83,22 @@ grid-area: map;
     -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
   }
+
+  #linksDiv {
+      font-size: medium;
+      margin:0;
+      padding: 0;
+  }
+
+  .list-inline {
+    /* list-style: none; */
+    color:white;
+    display: inline;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .list-separator > li:not(:last-child)::after {
+    content: "";
+}

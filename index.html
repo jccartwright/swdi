@@ -1,109 +1,142 @@
 <!DOCTYPE html>
 <html>
-<head>
-<meta name="description" content="Severe Weather Data Inventory">
-  <meta charset="utf-8">
-  <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Severe Weather Data Inventory</title>
 
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://js.arcgis.com/4.12/esri/css/main.css">
-  <!-- <link
+<head>
+    <meta name="description" content="Severe Weather Data Inventory">
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Severe Weather Data Inventory</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+        integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://js.arcgis.com/4.12/esri/css/main.css">
+    <!-- <link
       rel="stylesheet"
       href="https://js.arcgis.com/4.12/esri/themes/light/main.css"
     /> -->
-  <link rel="stylesheet" href="./css/app.css"
-  
-  <style>
-  </style>
+    <link rel="stylesheet" href="./css/app.css" <style>
+    </style>
 
-  <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script> -->
-  <script src="https://js.arcgis.com/4.12/"></script>
-  <script src="js/app.js"></script>
+    <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script> -->
+    <script src="https://js.arcgis.com/4.12/"></script>
+    <script src="js/app.js"></script>
 </head>
-<body onload="init();" >
+
+<body onload="init();">
     <div class="wrapper">
-      <div class="box header" id="titleDiv">NOAA's Severe Weather Data Inventory</div>
+        <div class="box header" id="titleDiv">NOAA's Severe Weather Data Inventory</div>
 
-      <!-- start sidebar -->
-      <div class="box sidebar">
-        <div class="input-group" style="padding: 15px;">
-          <button id="getDataButton" type="button" style='margin-left: 10px;' class="btn btn-primary">Get Data</button>
-          <button id="resetButton" type="button" style='margin-left: 30px;' class="btn btn-primary">Reset</button>
-        </div>
-
-        <!-- <input type="text" class="form-control" id="geolocationInput" readonly onclick="alert('type an address or click on the map');"> -->
-          
-        <div class="input-group">
-          <div class="input-group-prepend" style="padding-right: 5px; display: inline-block">
-            <label class="input-group-text swdi-select" for="yearSelect">Year</label>
-          </div>
-          <select style="background-color: grey;" class="custom-select swdi-select" id="yearSelect">
-          <!-- options populated programatically -->
-          </select>
-        </div>
-
-        <div class="input-group">
-            <div class="input-group-prepend" style="padding-right: 5px; display: inline-block">
-              <label class="input-group-text swdi-select" for="datasetSelect">Dataset</label>
+        <!-- start sidebar -->
+        <div class="box sidebar">
+            <div class="input-group" style="padding: 15px;">
+                <!-- <button id="getDataButton" type="button" style='margin-left: 10px;' class="btn btn-primary">Get Data</button> -->
             </div>
-            <select style="background-color: grey;" class="custom-select swdi-select" id="datasetSelect">
-              <option value="nx3structure">Filtered Storm Cells</option>
-              <option value="nx3structure_all">All Storm Cells</option>
-              <option value="nx3hail">Filtered Hail Signatures</option>
-              <option value="nx3hail_all">All Hail Signatures</option>
-              <option value="nx3meso">Mesocyclone Signatures</option>
-              <option value="nx3mda">Digital Mesocyclone Detection</option>
-              <option value="nx3tvs">Tornado Signatures</option>
-              <option value="plsr">Preliminary Local Storm Reports</option>
-              <option value="nldn">Lightning Strikes</option>
-            </select>
-            <div class="input-group-append" style="padding-left: 5px; display: inline-block">
-                <label style="font-size: large" class="input-group-text swdi-select" for="datasetSelect" onclick="showDatasetHelp();">?</label>
-            </div>
-        </div>
 
-        <div id="datasetHelp" class="well" style="font-size:small; background-color: gray; display: none">
-          <div>
-              <ul>
-              <li>Filtered Storm Cells (Max Reflectivity >=45dBZ) from NEXRAD (Level-III Storm Structure Product)</li>
-              <li>All Storm Cells from NEXRAD (Level-III Storm Structure Product)</li>
-              <li>Filtered Hail Signatures (Max Size > 0 and Probability = 100%) from NEXRAD (Level-III Hail Product) </li>
-              <li>All Hail Signatures from NEXRAD (Level-III Hail Product)</li>
-              <li>Mesocyclone Signatures from NEXRAD (Level-III Meso Product)</li>
-              <li>Digital Mesocyclone Detection Algorithm from NEXRAD (Level-III MDA Product)</li>
-              <li>Tornado Signatures from NEXRAD (Level-III TVS Product)</li>
-              <li>Preliminary Local Storm Reports from the NOAA National Weather Service</li>
-              <li>Lightning Strikes from Vaisala NLDN</li>
-              </ul>
-          </div>
-          <button type="button" class="btn btn-primary btn-sm" onclick="hideDatasetHelp();">close</button>
-        </div>
+            <!-- <input type="text" class="form-control" id="geolocationInput" readonly onclick="alert('type an address or click on the map');"> -->
 
-        <div class="input-group">
-            <div class="input-group-prepend" style="padding-right: 5px; display: inline-block">
-              <label class="input-group-text swdi-select" for="dateSelect">Day</label>
+            <div class="input-group">
+                <div class="input-group-prepend" style="padding-right: 5px; display: inline-block">
+                    <label class="input-group-text swdi-select" for="yearSelect">Year</label>
+                </div>
+                <select style="background-color: grey;" class="custom-select swdi-select" id="yearSelect">
+                    <!-- options populated programatically -->
+                </select>
             </div>
-            <select style="background-color: grey;" class="custom-select swdi-select" id="dateSelect">
-            <!-- options populated programatically -->
-            </select>
-        </div>
-  
-        <div id="messagePanel" class="well">
-        </div>
+
+            <div class="input-group">
+                <div class="input-group-prepend" style="padding-right: 5px; display: inline-block">
+                    <label class="input-group-text swdi-select" for="datasetSelect">Dataset</label>
+                </div>
+                <select style="background-color: grey;" class="custom-select swdi-select" id="datasetSelect">
+                    <option value="nx3structure">Filtered Storm Cells</option>
+                    <option value="nx3structure_all">All Storm Cells</option>
+                    <option value="nx3hail">Filtered Hail Signatures</option>
+                    <option value="nx3hail_all">All Hail Signatures</option>
+                    <option value="nx3meso">Mesocyclone Signatures</option>
+                    <option value="nx3mda">Digital Mesocyclone Detection</option>
+                    <option value="nx3tvs">Tornado Signatures</option>
+                    <option value="plsr">Preliminary Local Storm Reports</option>
+                    <option value="nldn">Lightning Strikes</option>
+                </select>
+                <div class="input-group-append" style="padding-left: 5px; display: inline-block">
+                    <label style="font-size: large" class="input-group-text swdi-select" for="datasetSelect"
+                        onclick="showDatasetHelp();">?</label>
+                </div>
+            </div>
+
+            <div id="datasetHelp" class="well" style="font-size:small; background-color: gray; display: none">
+                <div>
+                    <ul>
+                        <li>Filtered Storm Cells (Max Reflectivity >=45dBZ) from NEXRAD (Level-III Storm Structure
+                            Product)</li>
+                        <li>All Storm Cells from NEXRAD (Level-III Storm Structure Product)</li>
+                        <li>Filtered Hail Signatures (Max Size > 0 and Probability = 100%) from NEXRAD (Level-III Hail
+                            Product) </li>
+                        <li>All Hail Signatures from NEXRAD (Level-III Hail Product)</li>
+                        <li>Mesocyclone Signatures from NEXRAD (Level-III Meso Product)</li>
+                        <li>Digital Mesocyclone Detection Algorithm from NEXRAD (Level-III MDA Product)</li>
+                        <li>Tornado Signatures from NEXRAD (Level-III TVS Product)</li>
+                        <li>Preliminary Local Storm Reports from the NOAA National Weather Service</li>
+                        <li>Lightning Strikes from Vaisala NLDN</li>
+                    </ul>
+                    <a href="https://www.ncdc.noaa.gov/swdiws/csv/nx3structure" target="_blank" style="color:white">more information...</a>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm" onclick="hideDatasetHelp();" style="margin-top:10px;">close</button>
+            </div>
+
+            <div class="input-group">
+                <div class="input-group-prepend" style="padding-right: 5px; display: inline-block">
+                    <label class="input-group-text swdi-select" for="dateSelect">Day</label>
+                </div>
+                <select style="background-color: grey;" class="custom-select swdi-select" id="dateSelect">
+                    <!-- options populated programatically -->
+                </select>
+                
+                <div style="margin-top: 25px;margin-bottom: 50px;">
+                    <button id="resetButton" type="button" style='margin-left: 30px;'
+                        class="btn btn-primary">Reset</button>
+                </div>
+            </div>
+<hr/>
+            <div id="linksDiv" style="font-size:small; margin: 0px; text-align: center">
+                <ul class="list-inline list-separator">
+                    <!-- <li onclick="alert('TODO: show introduction');" class="btn btn-primary">Introduction</li> -->
+                    <li onclick="alert('TODO: show web services info');" class="btn btn-primary">Web Services</li>
+                    <li onclick="alert('TODO: show bulk download');" class="btn btn-primary">Bulk Download</li>
+                </ul>
+            </div>    
+
+            <div id="messagePanel" class="well">
+            </div>
+
+        </div> <!-- end sidebar -->
+
+        <div class="map" id="viewDiv"></div>
+
+        <div class="box footer" id="footerDiv" style="background-color:#112E51;color:white;font-size:12px;font-family:Helvetica,Arial;font-weight:bold">
+                <table class="footer" align="center">
+                        <tr valign="middle" align="center" style="background-color:#112E51;color:white;">
+                          <td style="background-color:#112E51;color:white;">
+                            <a style="background-color:#112E51;color:white;" href="https://www.ncei.noaa.gov/privacy" title="NOAA's Privacy Policy">Privacy Policy</a> |
+                            <a href="https://www.noaa.gov/foia-freedom-of-information-act" title="Freedom of Information Act">Freedom Of Information Act</a> |
+                            <a href="https://www.cio.noaa.gov/services_programs/info_quality.html" title="Information Quality">Information Quality</a> |
+                            <a href="https://www.noaa.gov/disclaimer.html" title="Disclaimer">Disclaimer</a> |
+                            <a href="https://www.ncdc.noaa.gov/survey" title="Take Our Site Survey">Take Our Survey</a> |
+                            <a href="https://www.commerce.gov/" title="United States Department of Commerce">Department of Commerce</a> |
+                            <a href="https://www.noaa.gov/" title="NOAA">NOAA</a> |</font>
+                            <a href="https://www.nesdis.noaa.gov/" title="NESDIS">NESDIS</a> |
+                            <a href="mailto:ncei.info@noaa.gov" rel="nofollow">Contact Us</a>
+                          </td>
+                        </tr>
+                      </table>
         
-      </div> <!-- end sidebar -->
-
-      <div class="map" id="viewDiv"></div>
-
-      <div class="box footer" id="footerDiv">Footer</div>
+        </div>
     </div>
-    <div id="select-by-polygon" class="esri-widget esri-widget--button esri-widget esri-interactive" title="Select features by polygon">
-      <span class="esri-icon-locate"></span>
-    </div>
+    <!-- <div id="select-by-polygon" class="esri-widget esri-widget--button esri-widget esri-interactive"
+        title="Select features by polygon">
+        <span class="esri-icon-locate"></span>
+    </div> -->
     <div id="tooltip" role="tooltip" style="display:none;"></div>
 </body>
+
 </html>
-
-
-

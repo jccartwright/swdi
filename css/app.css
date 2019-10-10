@@ -8,17 +8,18 @@ html, body {
 
 .header {
     grid-area: header;
-    background-color: #0079c1;
+    background-color:#112E51
 }
 
 .footer {
     grid-area: footer;
-    background-color: #0079c1;
+    /* background-color: #0079c1; */
 }
 
 .sidebar {
     grid-area: sidebar;
     background-color: #333;
+    
     position: relative;
 }
 
@@ -53,7 +54,7 @@ grid-area: map;
 @media only screen and (min-width: 544px)  {
 .wrapper {
     grid-template-columns: 310px auto;
-    grid-template-rows: 60px  auto 60px;
+    grid-template-rows: 100px  auto 35px;
     grid-template-areas:
     "header   header"
     "sidebar  map"
@@ -70,6 +71,15 @@ grid-area: map;
     font-size: 12px;
 }
 
+/* #navDiv {
+    position: relative;
+} */
+
+#submenu {
+    position: absolute;
+    top: 60px;
+}
+
 #tooltip {
     overflow: auto;
     z-index: 99;
@@ -82,23 +92,119 @@ grid-area: map;
     height: 160px;
     -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
-  }
+}
 
-  #linksDiv {
-      font-size: medium;
-      margin:0;
-      padding: 0;
-  }
+#linksDiv {
+    font-size: medium;
+    margin:0;
+    padding: 0;
+}
 
-  .list-inline {
+.list-inline {
     /* list-style: none; */
     color:white;
     display: inline;
     list-style-type: none;
     margin: 0;
     padding: 0;
-  }
+}
 
-  .list-separator > li:not(:last-child)::after {
+.list-separator > li:not(:last-child)::after {
     content: "";
+}
+
+#dateSelect {
+    background-color: grey; 
+    display: none;
+}
+
+#footerDiv {
+    background-color:#112E51;
+    color:white;
+    font-size:12px;
+    font-family:Helvetica,Arial;
+    font-weight:bold
+}
+
+#footerDiv a {
+    color:white;
+}
+
+#footerDiv tr {
+    background-color:#112E51
+}
+
+#introPanel {
+    overflow: auto;
+    z-index: 99;
+    position: absolute;
+    top: 115px;
+    left: 325px;
+    padding: 10px;
+    border-radius: 15px;
+    background-color: rgba(0,0,0,0.75);
+    color: #fff;
+    width: 500px; 
+    height: 300px;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    display:none;
+}
+
+#downloadPanel {
+    overflow: auto;
+    z-index: 99;
+    position: absolute;
+    top: 115px;
+    left: 325px;
+    padding: 10px;
+    border-radius: 15px;
+    background-color: rgba(0,0,0,0.75);
+    color: #fff;
+    width: 500px; 
+    height: 300px;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    display:none;
+}
+#downloadPanel a {
+    color: white;
+}
+
+#disclaimerPanel {
+    overflow: auto;
+    z-index: 99;
+    position: absolute;
+    top: 115px;
+    left: 325px;
+    padding: 10px;
+    border-radius: 15px;
+    background-color: rgba(0,0,0,0.75);
+    color: #fff;
+    width: 500px; 
+    height: 300px;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    display:none;
+}
+
+#creditsPanel {
+    overflow: auto;
+    z-index: 99;
+    position: absolute;
+    top: 115px;
+    left: 325px;
+    padding: 10px;
+    border-radius: 15px;
+    background-color: rgba(0,0,0,0.75);
+    color: #fff;
+    width: 500px; 
+    height: 300px;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    display:none;
+}
+
+#creditsPanel a {
+    color: white;
 }

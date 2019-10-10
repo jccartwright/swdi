@@ -24,7 +24,23 @@
 
 <body onload="init();">
     <div class="wrapper">
-        <div class="box header" id="titleDiv">NOAA's Severe Weather Data Inventory</div>
+
+        <!-- start header -->
+        <div class="box header" id="titleDiv">
+            <a href="https://www.ncei.noaa.gov/" title="National Centers for Environmental Information, National Oceanic and Atmospheric Administration">
+              <img src="images/map-banner.png" alt="National Centers for Environmental Information, National Oceanic and Atmospheric Administration" height="50px" style="vertical-align:middle; padding:3px 5px; margin-right:100px";></a>
+          NOAA's Severe Weather Data Inventory
+          <div id="navDiv">
+            <nav id="submenu">
+                <button id="introBtn" class="btn btn-primary btn-xs" type="submit">Introduction</button>
+                <button id="wsBtn" class="btn btn-primary btn-xs" type="submit">Web Services</button>
+                <button id="downloadBtn" class="btn btn-primary btn-xs" type="submit">Bulk Download</button>
+                <button id="disclaimerBtn" class="btn btn-primary btn-xs" type="submit">Disclaimer</button>
+                <button id="creditsBtn" class="btn btn-primary btn-xs" type="submit">Credits</button>
+            </nav>
+          </div>
+        </div>
+        <!-- end header -->
 
         <!-- start sidebar -->
         <div class="box sidebar">
@@ -84,40 +100,32 @@
                 <button type="button" class="btn btn-primary btn-sm" onclick="hideDatasetHelp();" style="margin-top:10px;">close</button>
             </div>
 
-            <div class="input-group">
+            <div id="dateInputGroup" class="input-group" style="display: none;">
                 <div class="input-group-prepend" style="padding-right: 5px; display: inline-block">
                     <label class="input-group-text swdi-select" for="dateSelect">Day</label>
                 </div>
-                <select style="background-color: grey; display: none;" class="custom-select swdi-select" id="dateSelect">
+                <select class="custom-select swdi-select" id="dateSelect">
                     <!-- options populated programatically -->
                 </select>
+                <button id="downloadDataBtn" type="button" class="btn btn-primary btn-xs" title="download data for selected day and dataset" style="margin-left: 10px;">Download</button>
+              </div>
                 
-                <div style="margin-top: 25px;margin-bottom: 50px;">
-                    <button id="resetButton" type="button" style='margin-left: 30px;'
-                        class="btn btn-primary">Reset</button>
-                </div>
-            </div>
-<hr/>
-            <div id="linksDiv" style="font-size:small; margin: 0px; text-align: center">
-                <ul class="list-inline list-separator">
-                    <!-- <li onclick="alert('TODO: show introduction');" class="btn btn-primary">Introduction</li> -->
-                    <li onclick="alert('TODO: show web services info');" class="btn btn-primary">Web Services</li>
-                    <li onclick="alert('TODO: show bulk download');" class="btn btn-primary">Bulk Download</li>
-                </ul>
-            </div>    
+          <div style="margin-top: 25px;margin-bottom: 50px;">
+              <button id="resetButton" type="button" style='margin-left: 30px;'
+                  class="btn btn-primary">Reset</button>
+          </div>
 
-            <div id="messagePanel" class="well">
-            </div>
+          <div id="messagePanel" class="well"></div>
 
         </div> <!-- end sidebar -->
 
         <div class="map" id="viewDiv"></div>
 
-        <div class="box footer" id="footerDiv" style="background-color:#112E51;color:white;font-size:12px;font-family:Helvetica,Arial;font-weight:bold">
+        <div class="box footer" id="footerDiv">
                 <table class="footer" align="center">
-                        <tr valign="middle" align="center" style="background-color:#112E51;color:white;">
-                          <td style="background-color:#112E51;color:white;">
-                            <a style="background-color:#112E51;color:white;" href="https://www.ncei.noaa.gov/privacy" title="NOAA's Privacy Policy">Privacy Policy</a> |
+                        <tr valign="middle" align="center">
+                          <td>
+                            <a href="https://www.ncei.noaa.gov/privacy" title="NOAA's Privacy Policy">Privacy Policy</a> |
                             <a href="https://www.noaa.gov/foia-freedom-of-information-act" title="Freedom of Information Act">Freedom Of Information Act</a> |
                             <a href="https://www.cio.noaa.gov/services_programs/info_quality.html" title="Information Quality">Information Quality</a> |
                             <a href="https://www.noaa.gov/disclaimer.html" title="Disclaimer">Disclaimer</a> |
@@ -137,6 +145,39 @@
         <span class="esri-icon-locate"></span>
     </div> -->
     <div id="tooltip" role="tooltip" style="display:none;"></div>
-</body>
+
+    <div id="introPanel" style="display: none">
+        The Severe Weather Data Inventory (SWDI) is an integrated database of severe weather records for the United States. The records in SWDI come from a variety of sources in the NCDC archive. SWDI provides the ability to search through all of these data to find records covering a particular time period and geographic region, and to download the results of your search in a variety of formats. The formats currently supported are Shapefile (for GIS), KMZ (for Google Earth), CSV (comma-separated), and XML.
+    </div>
+
+    <div id="downloadPanel" style="display: none">
+        Bulk Download of the SWDI database is available as comma-separated text format (CSV) files for each dataset and are available
+        for download from: <br><br>
+        (HTTP) <a href="https://www1.ncdc.noaa.gov/pub/data/swdi">https://www1.ncdc.noaa.gov/pub/data/swdi</a> 
+        <br> or <br> 
+         (FTP) <a href="ftp://ftp.ncdc.noaa.gov/pub/data/swdi">ftp://ftp.ncdc.noaa.gov/pub/data/swdi</a>
+        <br><br>
+        Please refer to the CHANGELOG.txt and KNOWN_ISSUES.txt files in the download directory for more information on the database.        
+    </div>
+
+    <div id="disclaimerPanel" style="display: none">
+        SWDI provides a uniform way to access data from a variety of sources, but it does not provide any additional quality control beyond the processing which took place when the data were archived. The data sources in SWDI will not provide complete severe weather coverage of a geographic region or time period, due to a number of factors (eg, reports for a location or time period not provided to NOAA). The absence of SWDI data for a particular location and time should not be interpreted as an indication that no severe weather occurred at that time and location. Furthermore, much of the data in SWDI is automatically derived from radar data and represents probable conditions for an event, rather than a confirmed occurrence.
+    </div>
+
+    <div id="creditsPanel" style="display: none">
+      <p>SWDI is a joint project of <a href="https://www.ncdc.noaa.gov">NOAA's National Climatic Data Center</a>,
+      <a href="https://www.unca.edu">UNCA</a>'s <a href="https://orgs.unca.edu/nemac">National Environmental Modeling and Analysis Center</a>, and the
+      <a href="https://www.renci.org">Renaissance Computing Institute</a>.</p>
+      <br>
+      <a href="https://www.ncdc.noaa.gov"><img border="0" src="https://www.ncdc.noaa.gov/swdi/images/ncdc.gif" alt="NEMAC Logo"/></a>
+      <a href="https://www.unca.edu"><img border="0" src="https://www.ncdc.noaa.gov/swdi/images/unca.png" alt="UNCA Logo"/></a>
+      <a href="https://orgs.unca.edu/nemac"><img border="0" src="https://www.ncdc.noaa.gov/swdi/images/nemac.gif" alt="NEMAC Logo"/></a>
+      <a href="https://www.renci.org"><img border="0" src="https://www.ncdc.noaa.gov/swdi/images/renciunca.png" alt="RENCI Logo"/></a>
+      <br><br>
+          <p>For support and questions about SWDI, email <a href="mailto:swdi.ncdc@noaa.gov">swdi.ncdc@noaa.gov</a>.</p>
+        </table>
+    </div>
+
+  </body>
 
 </html>

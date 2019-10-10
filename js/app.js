@@ -27,9 +27,90 @@ require([
     on(datasetSelect, "change", getSummaryData);
     // one style better than another?
     //dateSelect.addEventListener("change", dateChangeHandler);
+    on(dom.byId('downloadDataBtn'), 'click', downloadDailyData);
+
+
     var yearSelect = dom.byId('yearSelect');
     on(yearSelect, 'change', getSummaryData);
 
+    on(dom.byId('introBtn'), 'click', toggleIntroPanel);
+    on(dom.byId('introPanel'), 'click', toggleIntroPanel);
+    on(dom.byId('downloadBtn'), 'click', toggleDownloadPanel);
+    on(dom.byId('downloadPanel'), 'click', toggleDownloadPanel);
+    on(dom.byId('wsBtn'), 'click', function() {
+        window.open('https://www.ncdc.noaa.gov/swdiws');
+    });
+    on(dom.byId('disclaimerBtn'), 'click', toggleDisclaimerPanel);
+    on(dom.byId('disclaimerPanel'), 'click', toggleDisclaimerPanel);
+    on(dom.byId('creditsBtn'), 'click', toggleCreditsPanel);
+    on(dom.byId('creditsPanel'), 'click', toggleCreditsPanel);
+
+
+    function downloadDailyData() {
+        console.log('inside downloadDailyData...');
+        var dateSelect = document.getElementById('dateSelect');
+
+        var day = dateSelect.options[dateSelect.selectedIndex].value;
+        // reformat day value into yyyymmdd
+        var date = day.split('-').join('');
+
+        var datasetSelect = document.getElementById('datasetSelect');
+        var dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
+
+        var url = 'https://www.ncdc.noaa.gov/swdiws/csv/' + dataset + '/' + date + '?tile=' + geolocation;
+        console.log("retrieving data for " + dataset + " on " + day, url);
+
+        window.open(url);
+    }
+
+
+    function toggleIntroPanel() {
+        var panel = document.getElementById('introPanel');
+        if (panel.style.display == 'none') {
+            panel.style.display = 'inline-block';
+        } else {
+            panel.style.display = 'none';
+        }
+        document.getElementById('downloadPanel').style.display = 'none';
+        document.getElementById('disclaimerPanel').style.display = 'none';
+        document.getElementById('creditsPanel').style.display = 'none';
+    }
+
+    function toggleDownloadPanel() {
+        var panel = document.getElementById('downloadPanel');
+        if (panel.style.display == 'none') {
+            panel.style.display = 'inline-block';
+        } else {
+            panel.style.display = 'none';
+        }    
+        document.getElementById('introPanel').style.display = 'none';
+        document.getElementById('disclaimerPanel').style.display = 'none';
+        document.getElementById('creditsPanel').style.display = 'none';
+    }
+
+    function toggleDisclaimerPanel() {
+        var panel = document.getElementById('disclaimerPanel');
+        if (panel.style.display == 'none') {
+            panel.style.display = 'inline-block';
+        } else {
+            panel.style.display = 'none';
+        }
+        document.getElementById('downloadPanel').style.display = 'none';
+        document.getElementById('introPanel').style.display = 'none';
+        document.getElementById('creditsPanel').style.display = 'none';
+    }
+
+    function toggleCreditsPanel() {
+        var panel = document.getElementById('creditsPanel');
+        if (panel.style.display == 'none') {
+            panel.style.display = 'inline-block';
+        } else {
+            panel.style.display = 'none';
+        }
+        document.getElementById('downloadPanel').style.display = 'none';
+        document.getElementById('introPanel').style.display = 'none';
+        document.getElementById('disclaimerPanel').style.display = 'none';
+    }
 
     // TODO fill symbol not working
     // Create a symbol for rendering the tile boundary graphic
@@ -184,6 +265,7 @@ require([
 
     function addDateSelectOptions(results) {
         var dateSelect = document.getElementById('dateSelect');
+        var inputGroup = document.getElementById('dateInputGroup');
 
         // remove any previously existing options
         clearDateSelect();
@@ -195,14 +277,19 @@ require([
             option.text = result.DAY + ' (' + result.FCOUNT + ' events)';
             dateSelect.add(option);
         });
-        dateSelect.style.setProperty('display', 'inline-block')
+        dateSelect.style.setProperty('display', 'inline-block');
+        inputGroup.style.setProperty('display', 'inline-block');
+
     }
 
 
     function clearDateSelect() {
         // console.log('inside clearDateSelect...');
         var dateSelect = document.getElementById('dateSelect');
-        dateSelect.style.setProperty('display', 'none')
+        // dateSelect.style.setProperty('display', 'none')
+
+        var inputGroup = document.getElementById('dateInputGroup');
+        inputGroup.style.setProperty('display', 'none')
 
         var i;
         for (i = dateSelect.options.length - 1; i >= 0; i--) {

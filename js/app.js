@@ -27,6 +27,8 @@ require([
     on(datasetSelect, "change", getSummaryData);
     // one style better than another?
     //dateSelect.addEventListener("change", dateChangeHandler);
+    var yearSelect = dom.byId('yearSelect');
+    on(yearSelect, 'change', getSummaryData);
 
 
     // TODO fill symbol not working
@@ -138,6 +140,10 @@ require([
             return;
         }
 
+        // empty out Date select and points while waiting on new annual summary data
+        clearDateSelect();
+        clearPoints();
+
         // e.g. https://www.ncdc.noaa.gov/swdiws/csv/nx3structure/20190101:20200101?stat=tilesum:-105,40
         var datasetSelect = document.getElementById('datasetSelect');
         var dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
@@ -145,8 +151,8 @@ require([
         var startYear = parseInt(yearSelect.options[yearSelect.selectedIndex].value);
         var endYear = startYear + 1;
         var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + startYear + '0101:' + endYear + '0101';
-        console.log("retrieving summary data for " + startYear, url);
-        displayMessage("retrieving summary data for " + startYear + ". Please standby...");
+        console.log("retrieving summary data for " + dataset + ' in '+ startYear, url);
+        displayMessage("retrieving summary data for " + dataset + ' in '+ startYear + ". Please standby...");
         esriRequest(url, {
             query: {
                 stat: "tilesum:" + geolocation
@@ -155,12 +161,14 @@ require([
         }).then(function (response) {
             var summaryData = response.data;
             //   console.log(summaryData);
+            var stats = countSummaryData(summaryData.result);
+            displayMessage("data retrieved - found " + stats.totalEvents + " events across " + stats.numberOfDays + " days.");
 
             // populate date select
             addDateSelectOptions(summaryData.result);
 
-            var stats = countSummaryData(summaryData.result);
-            displayMessage("data retrieved - found " + stats.totalEvents + " events across " + stats.numberOfDays + " days.");
+            // fire the handler to display the first day
+            dateChangeHandler();
         });
     }
 
@@ -187,15 +195,14 @@ require([
             option.text = result.DAY + ' (' + result.FCOUNT + ' events)';
             dateSelect.add(option);
         });
-
-        // fire the handler to display the first day
-        dateChangeHandler();
+        dateSelect.style.setProperty('display', 'inline-block')
     }
 
 
     function clearDateSelect() {
         // console.log('inside clearDateSelect...');
         var dateSelect = document.getElementById('dateSelect');
+        dateSelect.style.setProperty('display', 'none')
 
         var i;
         for (i = dateSelect.options.length - 1; i >= 0; i--) {
@@ -257,7 +264,7 @@ require([
 
         view.goTo({ target: CONUS_CENTROID, zoom: 3 });
         view.graphics.removeAll();
-        pointsLayer.removeAll();
+        clearPoints();
         clearDateSelect();
         displayMessage(welcomeMessage);
     }
@@ -330,9 +337,10 @@ require([
 
     function drawPoints(results) {
         // console.log('inside draw points with '+results.length+' results...');
-        // clear any existing graphics
-        pointsLayer.removeAll();
 
+        // clear any existing graphics
+        clearPoints();
+        
         // generate list of Points and Graphics
         var graphics = [];
         results.forEach(function (result) {
@@ -360,7 +368,14 @@ require([
         });
         pointsLayer.addMany(graphics);
     }
+
+
+    function clearPoints() {
+        pointsLayer.removeAll();
+    }
 });
+
+
 
 //
 // the follow don't have any JSAPI dependencies and are outside the module loading callback

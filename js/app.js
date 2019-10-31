@@ -47,7 +47,7 @@ require([
 
 
     function downloadDailyData() {
-        console.log('inside downloadDailyData...');
+        // console.log('inside downloadDailyData...');
         var dateSelect = document.getElementById('dateSelect');
 
         var day = dateSelect.options[dateSelect.selectedIndex].value;
@@ -112,7 +112,6 @@ require([
         document.getElementById('disclaimerPanel').style.display = 'none';
     }
 
-    // TODO fill symbol not working
     // Create a symbol for rendering the tile boundary graphic
     var fillSymbol = {
         type: "simple-fill", // autocasts as new SimpleFillSymbol()
@@ -172,7 +171,7 @@ require([
                 tooltip.style.top = `${y - 120}px`;
                 tooltip.style.left = `${x - 260 / 2}px`;
                 var att = marker.attributes;
-                tooltip.innerHTML = `Time(UTC): ${att.ztime}<br>Radar ID: ${att.wsr_id}<br>DBZ: ${att.max_reflect}<br>VIL:${att.vil} kg/m&sup2;<br>Azimuth: ${att.azimuth}&deg;<br>Range: ${att.range} nm<br>lat/lon: ${marker.geometry.latitude.toFixed(3)}, ${marker.geometry.longitude.toFixed(3)} `;
+                tooltip.innerHTML = getGraphicTooltip(marker);
 
             } else {
                 tooltip.style.display = "none";
@@ -399,11 +398,90 @@ require([
 
             displayMessage(dailyData.result.length + ' events retrieved.');
 
-            drawPoints(dailyData.result);
+            var results = parseDailyResults(dailyData.result, dataset)
+
+            drawPoints(results);
 
             hideSpinner();
         });
     }
+
+
+    // TODO add parsing for other datasets
+    function parseDailyResults(results, dataset) {
+        switch (dataset) {
+            case 'nx3structure':
+            case 'nx3structure_all':
+            case 'nx3hail':
+            case 'nx3hail_all':
+                return(parseNx3structure(results));
+
+            case 'nx3meso':
+                break;
+            case 'nx3mda':
+                break;
+            case 'nx3tvs':
+                break;
+
+            case 'plsr':
+                break;
+            case 'nldn':
+                return(parseNldn(results));
+
+            default:
+            console.error('unrecognized dataset: ', dataset);
+            return;
+        }
+    }
+
+
+    function extractCoordsFromWKT(wkt) {
+        // bit of a hack to pull lon, lat from WKT string. depends on format like: "POINT (-105.083963633382 39.8283363414173)"
+        var coords = wkt.substring(7, wkt.length - 1).split(' ');
+        // TODO standardize the precision of the coords
+        return(coords);
+    }
+
+
+    function parseNx3structure(results) {
+        /* 
+        e.g.
+            [
+            {"MAX_REFLECT":"46","SHAPE":"POINT (-105.087486400579 39.6700222024728)","VIL":"7","WSR_ID":"KPUX","CELL_ID":"P4","ZTIME":"2019-05-18T00:09:58Z","AZIMUTH":"330","RANGE":"84"}
+            ]
+        */
+        var parsedData = [];
+        results.forEach(function(result) {
+            var coords = extractCoordsFromWKT(result.SHAPE)
+            result.SHAPE = coords;
+            parsedData.push(result)
+       })
+
+       return({'events': parsedData, 'dataset':'nx3structure'});
+    }
+
+
+    function parseNldn(results) {
+        /* 
+        e.g.
+            [
+            {"MILLISECONDS":"130","DETECTOR_QUANTITY":"6","POLARITY":"N","STROKE_COUNT":"1","SDO_POINT_TYPE":"POINT (-105.076 39.663)","DATASOURCE":"A","STROKE_STRENGTH":"11.2","MESSAGE_TYPE":"FL","STROKE_TYPE":"CG","ZTIME":"2019-05-18T00:15:57Z"}
+            ]
+        */
+        var parsedData = [];
+        results.forEach(function(result){
+            var coords = extractCoordsFromWKT(result.SDO_POINT_TYPE)
+
+            // standardize the geometry field
+            delete result.SDO_POINT_TYPE
+            result.SHAPE = coords
+           
+           parsedData.push(result)
+       })
+
+       return({'events': parsedData, 'dataset': 'nldn'});
+    }
+
 
     var pointPopupTemplate = {
         // autocasts as new PopupTemplate()
@@ -434,26 +512,18 @@ require([
         
         // generate list of Points and Graphics
         var graphics = [];
-        results.forEach(function (result) {
-            // bit of a hack to pull lon, lat from WKT string. depends on format like: "POINT (-105.083963633382 39.8283363414173)"
-            var coords = result.SHAPE.substring(7, result.SHAPE.length - 1).split(' ');
+        results.events.forEach(function (event) {
+            // augment the graphics attributes with the event type
+            event['dataset'] = results.dataset;
+
             graphics.push(new Graphic({
                 geometry: {
                     type: "point", // autocasts as new Point()
-                    longitude: coords[0],
-                    latitude: coords[1]
+                    longitude: event.SHAPE[0],
+                    latitude: event.SHAPE[1]
                 },
                 symbol: markerSymbol,
-                attributes: {
-                    max_reflect: result.MAX_REFLECT,
-                    vil: result.VIL,
-                    wsr_id: result.WSR_ID,
-                    cell_id: result.CELL_ID,
-                    azimuth: result.AZIMUTH,
-                    range: result.RANGE,
-                    ztime: result.ZTIME
-                },
-                //   popupTemplate: pointPopupTemplate
+                attributes: event
             })
             );
         });
@@ -461,20 +531,36 @@ require([
     }
 
 
-    function clearPoints() {
-        pointsLayer.removeAll();
+    // TODO add templates for other datasets
+    function getGraphicTooltip(marker) {
+        var att = marker.attributes;
+        switch (att.dataset) {
+            case 'nx3structure':
+            case 'nx3structure_all':
+            case 'nx3hail':
+            case 'nx3hail_all':                
+                return(`Time(UTC): ${att.ZTIME}<br>Radar ID: ${att.WSR_ID}<br>DBZ: ${att.MAX_REFLECT}<br>VIL:${att.VIL} kg/m&sup2;<br>Azimuth: ${att.AZIMUTH}&deg;<br>Range: ${att.RANGE} nm<br>lat/lon: ${marker.geometry.latitude.toFixed(3)}, ${marker.geometry.longitude.toFixed(3)}`)
+            
+            case 'nx3meso':
+                break;
+            case 'nx3mda':
+                break;
+            case 'nx3tvs':
+                break;
+
+            case 'plsr':
+                break;
+            case 'nldn':
+                return({});
+
+            default:
+            console.error('unrecognized dataset: ', dataset);
+            return;
+        }
     }
 
-    function toggleSpinner() {
-        console.log('inside toggleSpinner...');
-        loadingDiv = document.getElementById('loadingDiv');
-        console.log(loadingDiv.style.display);
-        if (loadingDiv.style.display == 'none') {
-            loadingDiv.style.display = 'inline-block';
-        } else {
-            loadingDiv.style.display = 'none';
-        }        
-
+    function clearPoints() {
+        pointsLayer.removeAll();
     }
 });
 
@@ -518,13 +604,11 @@ function hideDatasetHelp() {
 }
 
 function showSpinner() {
-    console.log('inside showSpinner...');
     loadingDiv = document.getElementById('loadingDiv');
     loadingDiv.style.display = 'inline-block';
 }
 
 function hideSpinner() {
-    console.log('inside hideSpinner...');
     loadingDiv = document.getElementById('loadingDiv');
     loadingDiv.style.display = 'none';
 }

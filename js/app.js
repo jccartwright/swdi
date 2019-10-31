@@ -234,6 +234,7 @@ require([
         var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + startYear + '0101:' + endYear + '0101';
         console.log("retrieving summary data for " + dataset + ' in '+ startYear, url);
         displayMessage("retrieving summary data for " + dataset + ' in '+ startYear + ". Please standby...");
+        showSpinner();
         esriRequest(url, {
             query: {
                 stat: "tilesum:" + geolocation
@@ -244,6 +245,7 @@ require([
             //   console.log(summaryData);
             var stats = countSummaryData(summaryData.result);
             displayMessage("data retrieved - found " + stats.totalEvents + " events across " + stats.numberOfDays + " days.");
+            hideSpinner();
 
             // populate date select
             addDateSelectOptions(summaryData.result);
@@ -381,7 +383,7 @@ require([
         var dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
 
         displayMessage("retrieving data for " + dataset + " on " + day + ". Please standby...");
-
+        showSpinner();
         // e.g. https://www.ncdc.noaa.gov/swdiws/csv/nx3structure/20190601?tile=-105.117,39.678
         var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + date;
         console.log("retrieving data for " + dataset + " on " + day, url);
@@ -398,6 +400,8 @@ require([
             displayMessage(dailyData.result.length + ' events retrieved.');
 
             drawPoints(dailyData.result);
+
+            hideSpinner();
         });
     }
 
@@ -460,6 +464,18 @@ require([
     function clearPoints() {
         pointsLayer.removeAll();
     }
+
+    function toggleSpinner() {
+        console.log('inside toggleSpinner...');
+        loadingDiv = document.getElementById('loadingDiv');
+        console.log(loadingDiv.style.display);
+        if (loadingDiv.style.display == 'none') {
+            loadingDiv.style.display = 'inline-block';
+        } else {
+            loadingDiv.style.display = 'none';
+        }        
+
+    }
 });
 
 
@@ -500,6 +516,19 @@ function showDatasetHelp() {
 function hideDatasetHelp() {
     document.getElementById('datasetHelp').style.setProperty('display', 'none');
 }
+
+function showSpinner() {
+    console.log('inside showSpinner...');
+    loadingDiv = document.getElementById('loadingDiv');
+    loadingDiv.style.display = 'inline-block';
+}
+
+function hideSpinner() {
+    console.log('inside hideSpinner...');
+    loadingDiv = document.getElementById('loadingDiv');
+    loadingDiv.style.display = 'none';
+}
+
 
 
 

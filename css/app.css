@@ -89,7 +89,7 @@ grid-area: map;
     background-color: rgba(0,0,0,0.75);
     color: #fff;
     width: 260px; 
-    height: 160px;
+    height: 200px;
     -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
 }

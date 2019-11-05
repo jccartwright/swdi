@@ -58,7 +58,7 @@ require([
         var dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
 
         var url = 'https://www.ncdc.noaa.gov/swdiws/csv/' + dataset + '/' + date + '?tile=' + geolocation;
-        console.log("retrieving data for " + dataset + " on " + day, url);
+        // console.log("retrieving data for " + dataset + " on " + day, url);
 
         window.open(url);
     }
@@ -231,7 +231,7 @@ require([
         var startYear = parseInt(yearSelect.options[yearSelect.selectedIndex].value);
         var endYear = startYear + 1;
         var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + startYear + '0101:' + endYear + '0101';
-        console.log("retrieving summary data for " + dataset + ' in '+ startYear, url);
+        // console.log("retrieving summary data for " + dataset + ' in '+ startYear, url);
         displayMessage("retrieving summary data for " + dataset + ' in '+ startYear + ". Please standby...");
         showSpinner();
         esriRequest(url, {
@@ -241,10 +241,15 @@ require([
             responseType: "json"
         }).then(function (response) {
             var summaryData = response.data;
-            //   console.log(summaryData);
+            // console.log(summaryData);
             var stats = countSummaryData(summaryData.result);
-            displayMessage("data retrieved - found " + stats.totalEvents + " events across " + stats.numberOfDays + " days.");
             hideSpinner();
+            if (stats.totalEvents > 0) {
+                displayMessage("data retrieved - found " + stats.totalEvents + " events across " + stats.numberOfDays + " days.");
+            } else {
+                displayMessage("no data found for " + dataset + ' in '+ startYear);
+                return;
+            }
 
             // populate date select
             addDateSelectOptions(summaryData.result);
@@ -385,7 +390,7 @@ require([
         showSpinner();
         // e.g. https://www.ncdc.noaa.gov/swdiws/csv/nx3structure/20190601?tile=-105.117,39.678
         var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + date;
-        console.log("retrieving data for " + dataset + " on " + day, url);
+        // console.log("retrieving data for " + dataset + " on " + day, url);
 
         esriRequest(url, {
             query: {
@@ -417,14 +422,18 @@ require([
                 return(parseNx3structure(results));
 
             case 'nx3meso':
+                // have yet to find a response example
                 break;
+
             case 'nx3mda':
-                break;
+                return(parseNx3mda(results));
+
             case 'nx3tvs':
-                break;
+                return(parseNx3tvs(results));
 
             case 'plsr':
                 break;
+
             case 'nldn':
                 return(parseNldn(results));
 
@@ -483,6 +492,45 @@ require([
     }
 
 
+    function parseNx3tvs(results) {
+        /* 
+        e.g.
+        [
+        {"CELL_TYPE":"TVS","SHAPE":"POINT (-105.001045144039 40.0443316122911)","MAX_SHEAR":"40","WSR_ID":"KDEN","MXDV":"73","CELL_ID":"Q0","ZTIME":"2018-07-05T21:50:29Z","AZIMUTH":"311","RANGE":"29"}
+        ]
+        */
+        var parsedData = [];
+        results.forEach(function(result){
+            var coords = extractCoordsFromWKT(result.SHAPE)
+            result.SHAPE = coords
+           
+           parsedData.push(result)
+       })
+
+       return({'events': parsedData, 'dataset': 'nx3tvs'});
+    }
+
+
+    function parseNx3mda(results) {
+        // console.log('inside parseNx3mda.', results);
+        /* 
+        e.g.
+            [
+            {"STR_RANK":"7","MSI":"3996","LL_DV":"82","MOTION_KTS":"-999","WSR_ID":"KDEN","CELL_ID":"795","MAX_RV_KTS":"49","TVS":"N","SHAPE":"POINT (-105.023470692909 39.9947802649673)","LL_BASE":"8","DEPTH_KFT":"12","MOTION_DEG":"-999","SCIT_ID":"H0","DPTH_STMRL":"0","ZTIME":"2018-05-13T01:09:31Z","MAX_RV_KFT":"17","AZIMUTH":"305","LL_ROT_VEL":"38","RANGE":"28"}
+            ]
+        */
+        var parsedData = [];
+        results.forEach(function(result){
+            var coords = extractCoordsFromWKT(result.SHAPE)
+
+            result.SHAPE = coords;
+            parsedData.push(result)           
+       })
+
+       return({'events': parsedData, 'dataset': 'nx3mda'});
+    }
+
+
     var pointPopupTemplate = {
         // autocasts as new PopupTemplate()
         title: "{ztime}",
@@ -505,7 +553,7 @@ require([
     };
 
     function drawPoints(results) {
-        // console.log('inside draw points with '+results.length+' results...');
+        // console.log('inside draw points with '+results.events.length+' results.', results);
 
         // clear any existing graphics
         clearPoints();
@@ -531,7 +579,7 @@ require([
     }
 
 
-    // TODO add templates for other datasets
+    // TODO add templates for nx3meso, plsr
     function getGraphicTooltip(marker) {
         var att = marker.attributes;
         switch (att.dataset) {
@@ -543,15 +591,18 @@ require([
             
             case 'nx3meso':
                 break;
+
             case 'nx3mda':
-                break;
+                return(`Time(UTC): ${att.ZTIME}<br>Radar ID: ${att.WSR_ID}<br>Strength Ranking: ${att.STR_RANK}<br>SCIT IT:${att.SCIT_ID}<br>Azimuth: ${att.AZIMUTH}&deg;<br>Range: ${att.RANGE} nm<br>lat/lon: ${marker.geometry.latitude.toFixed(3)}, ${marker.geometry.longitude.toFixed(3)}`)
+
             case 'nx3tvs':
-                break;
+                return(`Time(UTC): ${att.ZTIME}<br>Radar ID: ${att.WSR_ID}<br>Cell Type: ${att.CELL_TYPE}<br>Max Shear:${att.MAX_SHEAR} E-3/s<br>MXDV: ${att.MXDV} kts<br>Azimuth: ${att.AZIMUTH}&deg;<br>Range: ${att.RANGE} nm<br>lat/lon: ${marker.geometry.latitude.toFixed(3)}, ${marker.geometry.longitude.toFixed(3)}`)
 
             case 'plsr':
                 break;
+
             case 'nldn':
-                return({});
+                return(`Time(UTC): ${att.ZTIME}<br>Milliseconds: ${att.MILLISECONDS}<br>Detector Quantity: ${att.DETECTOR_QUANTITY}<br>Polarity:${att.POLARITY}<br>Stroke Strength: ${att.STROKE_STRENGTH}<br>Stroke Type: ${att.STROKE_TYPE}<br>Stroke Count: ${att.STROKE_COUNT}<br>lat/lon: ${marker.geometry.latitude.toFixed(3)}, ${marker.geometry.longitude.toFixed(3)}`)
 
             default:
             console.error('unrecognized dataset: ', dataset);

@@ -27,7 +27,10 @@ require([
     on(datasetSelect, "change", getSummaryData);
     // one style better than another?
     //dateSelect.addEventListener("change", dateChangeHandler);
+
     on(dom.byId('downloadDataBtn'), 'click', downloadDailyData);
+    // var downloadOptions = document.getElementById('downloadOptions');
+    // downloadOptions.addEventListener("change", downloadOptionsHandler);
 
 
     var yearSelect = dom.byId('yearSelect');
@@ -46,8 +49,16 @@ require([
     on(dom.byId('creditsPanel'), 'click', toggleCreditsPanel);
 
 
-    function downloadDailyData(evt) {
-        console.log(evt);
+    // function downloadOptionsHandler(evt) {
+    //     console.log(evt);
+
+    //     var formatSelect = document.getElementById('downloadOptions');
+    //     var format = formatSelect.options[formatSelect.selectedIndex].value;
+    //     console.log('downloading in '+format);
+    // }
+
+
+    function downloadDailyData() {
         // console.log('inside downloadDailyData...');
         var dateSelect = document.getElementById('dateSelect');
 
@@ -393,7 +404,7 @@ require([
         var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + date;
         // console.log("retrieving data for " + dataset + " on " + day, url);
 
-        updateDownloadLinks(dataset, date, geolocation);
+        // updateDownloadLinks(dataset, date, geolocation);
 
         esriRequest(url, {
             query: {
@@ -416,7 +427,7 @@ require([
 
 
     function updateDownloadLinks(dataset, date, geolocation) {
-        console.log('inside updateDownloadLinks with ', dataset, date, geolocation);
+        // console.log('inside updateDownloadLinks with ', dataset, date, geolocation);
 
         var url = 'https://www.ncdc.noaa.gov/swdiws/csv/' + dataset + '/' + date + '?tile=' + geolocation; 
         document.getElementById('csvDownloadLink').href = url;

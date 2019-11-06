@@ -46,7 +46,8 @@ require([
     on(dom.byId('creditsPanel'), 'click', toggleCreditsPanel);
 
 
-    function downloadDailyData() {
+    function downloadDailyData(evt) {
+        console.log(evt);
         // console.log('inside downloadDailyData...');
         var dateSelect = document.getElementById('dateSelect');
 
@@ -168,8 +169,8 @@ require([
             if (results.length > 1 && results[1].graphic.layer.title == 'events') {
                 var marker = results[1].graphic;
                 tooltip.style.display = "block";
-                tooltip.style.top = `${y - 120}px`;
-                tooltip.style.left = `${x - 260 / 2}px`;
+                tooltip.style.top = `${y - 80}px`;
+                tooltip.style.left = `${x - 120 / 2}px`;
                 var att = marker.attributes;
                 tooltip.innerHTML = getGraphicTooltip(marker);
 
@@ -392,6 +393,8 @@ require([
         var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + date;
         // console.log("retrieving data for " + dataset + " on " + day, url);
 
+        updateDownloadLinks(dataset, date, geolocation);
+
         esriRequest(url, {
             query: {
                 tile: geolocation
@@ -409,6 +412,23 @@ require([
 
             hideSpinner();
         });
+    }
+
+
+    function updateDownloadLinks(dataset, date, geolocation) {
+        console.log('inside updateDownloadLinks with ', dataset, date, geolocation);
+
+        var url = 'https://www.ncdc.noaa.gov/swdiws/csv/' + dataset + '/' + date + '?tile=' + geolocation; 
+        document.getElementById('csvDownloadLink').href = url;
+
+        url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + date + '?tile=' + geolocation; 
+        document.getElementById('jsonDownloadLink').href = url;
+
+        url = 'https://www.ncdc.noaa.gov/swdiws/kmz/' + dataset + '/' + date + '?tile=' + geolocation; 
+        document.getElementById('kmzDownloadLink').href = url;
+
+        url = 'https://www.ncdc.noaa.gov/swdiws/xml/' + dataset + '/' + date + '?tile=' + geolocation; 
+        document.getElementById('xmlDownloadLink').href = url;
     }
 
 

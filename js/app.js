@@ -127,21 +127,21 @@ require([
     // Create a symbol for rendering the tile boundary graphic
     var fillSymbol = {
         type: "simple-fill", // autocasts as new SimpleFillSymbol()
-        color: [255, 255, 0, 0.2],
+        color: [255, 255, 0, 0.0],
         outline: {
             // autocasts as new SimpleLineSymbol()
             color: [255, 0, 0],
-            width: 1
+            width: 2
         }
     };
 
     var markerSymbol = {
         type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
-        color: [226, 119, 40],
+        color: [0,0,255],
         outline: {
             // autocasts as new SimpleLineSymbol()
-            color: [255, 255, 255],
-            width: 2
+            color: [0,0,0],
+            width: 1
         }
     };
 
@@ -160,6 +160,7 @@ require([
         zoom: 3,
         center: CONUS_CENTROID
     });
+    view.ui.move("zoom", "top-right");
 
     // view.ui.add("select-by-polygon", "top-left");
     // const selectButton = document.getElementById("select-by-polygon");
@@ -170,7 +171,7 @@ require([
     var homeWidget = new Home({
         view: view
     });
-    view.ui.add(homeWidget, "top-left");
+    view.ui.add(homeWidget, "top-right");
 
     const tooltip = document.getElementById("tooltip");
     view.on("pointer-move", event => {
@@ -210,7 +211,7 @@ require([
     });
 
     view.ui.add(searchWidget, {
-        position: "top-right",
+        position: "top-left",
         index: 0
     });
 
@@ -358,6 +359,8 @@ require([
 
         // re-center on grid
         view.goTo({ target: graphic.geometry.center, zoom: 12 });
+
+        updateFilter(pointsLayer, graphic.geometry);
     }
 
 
@@ -463,6 +466,7 @@ require([
                 return(parseNx3tvs(results));
 
             case 'plsr':
+                // have yet to find a response example
                 break;
 
             case 'nldn':
@@ -644,6 +648,27 @@ require([
     function clearPoints() {
         pointsLayer.removeAll();
     }
+
+
+    function updateFilter(featureLayerView, filterGeometry) {
+        console.log('inside updateFilter with ', featureLayerView, filterGeometry);
+
+        featureFilter = {
+          // autocasts to FeatureFilter
+          geometry: filterGeometry,
+          spatialRelationship: 'intersects',
+          distance: 1,
+          units: 'miles'
+        };
+        // set effect on excluded features
+        // make them gray and transparent
+        if (view) {
+          view.effect = {
+            filter: featureFilter,
+            excludedEffect: "grayscale(100%) opacity(30%)"
+          };
+        }
+      }
 });
 
 

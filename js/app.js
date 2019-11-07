@@ -197,12 +197,23 @@ require([
         // don't need popup since just collecting the coordinate
         view.popup.autoOpenEnabled = false;
 
+        view.hitTest(event).then(({ results }) => {
+            // clicking on point or anywhere w/in current tile boundary should not trigger update
+            if (results.length === 0) {
+                mapClickHandler(event);
+            }
+        });
+    });
+
+
+    function mapClickHandler(event) {
         // Get the coordinates of the click on the map view
         setGeolocation(event.mapPoint.longitude, event.mapPoint.latitude);
 
         // match the zoom level used by Search widget
         view.goTo({ target: event.mapPoint, zoom: 12 }, { duration: 2000 })
-    });
+    }
+
 
     // geocode widget
     var searchWidget = new Search({

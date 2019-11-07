@@ -65,8 +65,8 @@ grid-area: map;
 #messagePanel {
     width: 290px;
     height: 75px;
-    position: absolute;
-    bottom: 0;
+    /* position: absolute; */
+    /* bottom: 0; */
     background-color:gray;
     font-size: 12px;
 }

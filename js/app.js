@@ -49,81 +49,6 @@ require([
     on(dom.byId('creditsPanel'), 'click', toggleCreditsPanel);
 
 
-    // function downloadOptionsHandler(evt) {
-    //     console.log(evt);
-
-    //     var formatSelect = document.getElementById('downloadOptions');
-    //     var format = formatSelect.options[formatSelect.selectedIndex].value;
-    //     console.log('downloading in '+format);
-    // }
-
-
-    function downloadDailyData() {
-        // console.log('inside downloadDailyData...');
-        var dateSelect = document.getElementById('dateSelect');
-
-        var day = dateSelect.options[dateSelect.selectedIndex].value;
-        // reformat day value into yyyymmdd
-        var date = day.split('-').join('');
-
-        var datasetSelect = document.getElementById('datasetSelect');
-        var dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
-
-        var url = 'https://www.ncdc.noaa.gov/swdiws/csv/' + dataset + '/' + date + '?tile=' + geolocation;
-        // console.log("retrieving data for " + dataset + " on " + day, url);
-
-        window.open(url);
-    }
-
-
-    function toggleIntroPanel() {
-        var panel = document.getElementById('introPanel');
-        if (panel.style.display == 'none') {
-            panel.style.display = 'inline-block';
-        } else {
-            panel.style.display = 'none';
-        }
-        document.getElementById('downloadPanel').style.display = 'none';
-        document.getElementById('disclaimerPanel').style.display = 'none';
-        document.getElementById('creditsPanel').style.display = 'none';
-    }
-
-    function toggleDownloadPanel() {
-        var panel = document.getElementById('downloadPanel');
-        if (panel.style.display == 'none') {
-            panel.style.display = 'inline-block';
-        } else {
-            panel.style.display = 'none';
-        }    
-        document.getElementById('introPanel').style.display = 'none';
-        document.getElementById('disclaimerPanel').style.display = 'none';
-        document.getElementById('creditsPanel').style.display = 'none';
-    }
-
-    function toggleDisclaimerPanel() {
-        var panel = document.getElementById('disclaimerPanel');
-        if (panel.style.display == 'none') {
-            panel.style.display = 'inline-block';
-        } else {
-            panel.style.display = 'none';
-        }
-        document.getElementById('downloadPanel').style.display = 'none';
-        document.getElementById('introPanel').style.display = 'none';
-        document.getElementById('creditsPanel').style.display = 'none';
-    }
-
-    function toggleCreditsPanel() {
-        var panel = document.getElementById('creditsPanel');
-        if (panel.style.display == 'none') {
-            panel.style.display = 'inline-block';
-        } else {
-            panel.style.display = 'none';
-        }
-        document.getElementById('downloadPanel').style.display = 'none';
-        document.getElementById('introPanel').style.display = 'none';
-        document.getElementById('disclaimerPanel').style.display = 'none';
-    }
-
     // Create a symbol for rendering the tile boundary graphic
     var fillSymbol = {
         type: "simple-fill", // autocasts as new SimpleFillSymbol()
@@ -162,6 +87,7 @@ require([
     });
     view.ui.move("zoom", "top-right");
 
+    // tool to select tile location from map
     // view.ui.add("select-by-polygon", "top-left");
     // const selectButton = document.getElementById("select-by-polygon");
     // selectButton.addEventListener("click", function() {
@@ -192,7 +118,7 @@ require([
         });
     });
 
-    // view click conflicts w/ the popup on Graphic  
+    // view click conflicts w/ the popup on Graphic.  
     view.on("click", function (event) {
         // don't need popup since just collecting the coordinate
         view.popup.autoOpenEnabled = false;
@@ -205,27 +131,15 @@ require([
         });
     });
 
-
-    function mapClickHandler(event) {
-        // Get the coordinates of the click on the map view
-        setGeolocation(event.mapPoint.longitude, event.mapPoint.latitude);
-
-        // match the zoom level used by Search widget
-        view.goTo({ target: event.mapPoint, zoom: 12 }, { duration: 2000 })
-    }
-
-
     // geocode widget
     var searchWidget = new Search({
         view: view,
         popupEnabled: false
     });
-
     view.ui.add(searchWidget, {
         position: "top-left",
         index: 0
     });
-
     searchWidget.watch("resultGraphic", function (resultGraphic) {
         // resultGraphic can be null when resetting the Search widget
         if (resultGraphic) {
@@ -236,7 +150,86 @@ require([
 
     //  
     // supporting functions
-    // 
+    //
+    function downloadDailyData() {
+        // console.log('inside downloadDailyData...');
+        var dateSelect = document.getElementById('dateSelect');
+
+        var day = dateSelect.options[dateSelect.selectedIndex].value;
+        // reformat day value into yyyymmdd
+        var date = day.split('-').join('');
+
+        var datasetSelect = document.getElementById('datasetSelect');
+        var dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
+
+        var url = 'https://www.ncdc.noaa.gov/swdiws/csv/' + dataset + '/' + date + '?tile=' + geolocation;
+        // console.log("retrieving data for " + dataset + " on " + day, url);
+
+        window.open(url);
+    }
+
+
+    function toggleIntroPanel() {
+        var panel = document.getElementById('introPanel');
+        if (panel.style.display == 'none') {
+            panel.style.display = 'inline-block';
+        } else {
+            panel.style.display = 'none';
+        }
+        document.getElementById('downloadPanel').style.display = 'none';
+        document.getElementById('disclaimerPanel').style.display = 'none';
+        document.getElementById('creditsPanel').style.display = 'none';
+    }
+
+
+    function toggleDownloadPanel() {
+        var panel = document.getElementById('downloadPanel');
+        if (panel.style.display == 'none') {
+            panel.style.display = 'inline-block';
+        } else {
+            panel.style.display = 'none';
+        }    
+        document.getElementById('introPanel').style.display = 'none';
+        document.getElementById('disclaimerPanel').style.display = 'none';
+        document.getElementById('creditsPanel').style.display = 'none';
+    }
+
+
+    function toggleDisclaimerPanel() {
+        var panel = document.getElementById('disclaimerPanel');
+        if (panel.style.display == 'none') {
+            panel.style.display = 'inline-block';
+        } else {
+            panel.style.display = 'none';
+        }
+        document.getElementById('downloadPanel').style.display = 'none';
+        document.getElementById('introPanel').style.display = 'none';
+        document.getElementById('creditsPanel').style.display = 'none';
+    }
+
+
+    function toggleCreditsPanel() {
+        var panel = document.getElementById('creditsPanel');
+        if (panel.style.display == 'none') {
+            panel.style.display = 'inline-block';
+        } else {
+            panel.style.display = 'none';
+        }
+        document.getElementById('downloadPanel').style.display = 'none';
+        document.getElementById('introPanel').style.display = 'none';
+        document.getElementById('disclaimerPanel').style.display = 'none';
+    }
+
+    
+    function mapClickHandler(event) {
+        // Get the coordinates of the click on the map view
+        setGeolocation(event.mapPoint.longitude, event.mapPoint.latitude);
+
+        // match the zoom level used by Search widget
+        view.goTo({ target: event.mapPoint, zoom: 12 }, { duration: 2000 })
+    }
+
+
     function getSummaryData(evt) {
         // console.log('inside getSummaryData()...', evt);
         if (!geolocation) {
@@ -314,7 +307,6 @@ require([
 
 
     function clearDateSelect() {
-        // console.log('inside clearDateSelect...');
         var dateSelect = document.getElementById('dateSelect');
         // dateSelect.style.setProperty('display', 'none')
 
@@ -328,7 +320,6 @@ require([
     }
 
 
-    // TODO draw tile boundaries on map
     function setGeolocation(longitude, latitude) {
         var lat = Math.round(latitude * 1000) / 1000;
         var lon = Math.round(longitude * 1000) / 1000;
@@ -371,14 +362,12 @@ require([
         // re-center on grid
         view.goTo({ target: graphic.geometry.center, zoom: 12 });
 
-        updateFilter(pointsLayer, graphic.geometry);
+        // updateFilter(pointsLayer, graphic.geometry);
     }
 
 
     function reset() {
-        // console.log('inside reset...');
         geolocation = null;
-        // document.getElementById('geolocationInput').value = geolocation;
         document.getElementById('datasetSelect').selectedIndex = 0;
 
         view.goTo({ target: CONUS_CENTROID, zoom: 3 });
@@ -390,9 +379,9 @@ require([
 
 
     function dateChangeHandler(evt) {
-        // console.log('inside dateChangeHandler...');
         // var day = evt.target.options[evt.target.selectedIndex].value;
         var dateSelect = document.getElementById('dateSelect');
+        // shouldn't be possible to see this select w/o year summary data
         if (dateSelect.options.length == 0) {
             alert('You must first retrieve data for the year');
             return;
@@ -404,8 +393,6 @@ require([
 
 
     function getDailyData(day) {
-        // console.log('inside getDailyData with ',day);
-
         // reformat day value into yyyymmdd
         var date = day.split('-').join('');
 
@@ -418,7 +405,7 @@ require([
         var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + date;
         // console.log("retrieving data for " + dataset + " on " + day, url);
 
-        // updateDownloadLinks(dataset, date, geolocation);
+        updateDownloadLinks(dataset, date, geolocation);
 
         esriRequest(url, {
             query: {
@@ -441,8 +428,6 @@ require([
 
 
     function updateDownloadLinks(dataset, date, geolocation) {
-        // console.log('inside updateDownloadLinks with ', dataset, date, geolocation);
-
         var url = 'https://www.ncdc.noaa.gov/swdiws/csv/' + dataset + '/' + date + '?tile=' + geolocation; 
         document.getElementById('csvDownloadLink').href = url;
 
@@ -598,6 +583,7 @@ require([
         ]
     };
 
+
     function drawPoints(results) {
         // console.log('inside draw points with '+results.events.length+' results.', results);
 
@@ -656,11 +642,13 @@ require([
         }
     }
 
+
     function clearPoints() {
         pointsLayer.removeAll();
     }
 
 
+    // not currently used 
     function updateFilter(featureLayerView, filterGeometry) {
         console.log('inside updateFilter with ', featureLayerView, filterGeometry);
 

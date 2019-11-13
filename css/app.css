@@ -34,12 +34,11 @@ grid-area: map;
 
 .wrapper {
     display: grid;
-    grid-template-rows: 25%  25% auto, 25%;
+    grid-template-rows: 100px  300px auto 45px;
     grid-template-areas:
         "header"
         "sidebar"
         "map"
-
         "footer";
     width: 100vw;
     height: 100vh;

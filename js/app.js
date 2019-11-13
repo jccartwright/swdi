@@ -448,6 +448,9 @@ require([
 
         url = 'https://www.ncdc.noaa.gov/swdiws/xml/' + dataset + '/' + date + '?tile=' + geolocation; 
         document.getElementById('xmlDownloadLink').href = url;
+
+        url = 'https://www.ncdc.noaa.gov/swdiws/shp/' + dataset + '/' + date + '?tile=' + geolocation; 
+        document.getElementById('shpDownloadLink').href = url;
     }
 
 

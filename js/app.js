@@ -52,11 +52,11 @@ require([
     // Create a symbol for rendering the tile boundary graphic
     var fillSymbol = {
         type: "simple-fill", // autocasts as new SimpleFillSymbol()
-        color: [255, 255, 0, 0.0],
+        color: [205, 205, 205, 0.5],
         outline: {
             // autocasts as new SimpleLineSymbol()
-            color: [255, 0, 0],
-            width: 2
+            color: [0, 0, 0],
+            width: 3
         }
     };
 
@@ -103,9 +103,9 @@ require([
     view.on("pointer-move", event => {
         const { x, y } = event;
         view.hitTest(event).then(({ results }) => {
-            // points will always fall w/in rectangle so there will be 2 results when over point
-            if (results.length > 1 && results[1].graphic.layer.title == 'events') {
-                var marker = results[1].graphic;
+            // points will always fall w/in hole of rectangle
+            if (results.length === 1 && results[0].graphic.layer.title == 'events') {
+                var marker = results[0].graphic;
                 tooltip.style.display = "block";
                 tooltip.style.top = `${y - 80}px`;
                 tooltip.style.left = `${x - 120 / 2}px`;
@@ -124,8 +124,11 @@ require([
         view.popup.autoOpenEnabled = false;
 
         view.hitTest(event).then(({ results }) => {
-            // clicking on point or anywhere w/in current tile boundary should not trigger update
-            if (results.length === 0) {
+            // no current selection (i.e. frame on screen)
+            if (view.graphics.length === 0) {
+                mapClickHandler(event);
+            //not on point nor on frame's exterior    
+            } else if (results.length === 1 && results[0].graphic.layer.title !== 'events') {
                 mapClickHandler(event);
             }
         });
@@ -220,7 +223,7 @@ require([
         document.getElementById('disclaimerPanel').style.display = 'none';
     }
 
-    
+
     function mapClickHandler(event) {
         // Get the coordinates of the click on the map view
         setGeolocation(event.mapPoint.longitude, event.mapPoint.latitude);
@@ -340,17 +343,23 @@ require([
         var maxx = (lon + 0.05).toFixed(2);
         var maxy = (lat + 0.05).toFixed(2);
 
+
         // ring must be in CW order for fill to work.
         var graphic = new Graphic({
             geometry: {
                 type: "polygon",
                 rings: [
-                    [minx, miny],
-                    [minx, maxy],
+                    [[-180, -90],
+                    [-180, 90],
+                    [180, 90],
+                    [180, -90]],
+                    // counterclockwise for holes
+                    [[minx, miny],
+                    [maxx, miny],
                     [maxx, maxy],
-                    [maxx, miny]
+                    [minx, maxy]]
                 ]
-            },
+              },
             symbol: fillSymbol
         });
 

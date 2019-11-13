@@ -684,7 +684,7 @@ require([
 //
 // the follow don't have any JSAPI dependencies and are outside the module loading callback
 //
-var welcomeMessage = "Welcome to NOAA's Severe Weather Data Inventory.<br>Begin by searching for a location of interest...";
+var welcomeMessage = "Begin by searching for a location of interest by clicking on the map or entering an address or place...";
 
 function init() {
     // console.log('inside init...');

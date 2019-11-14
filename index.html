@@ -17,8 +17,8 @@
     <link rel="stylesheet" href="./css/app.css" <style>
     </style>
 
-    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8=" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <!-- <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8=" crossorigin="anonymous"></script> -->
+    <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script> -->
     <script src="https://js.arcgis.com/4.12/"></script>
     <script src="js/app.js"></script>
 </head>
@@ -109,14 +109,16 @@
                 </select>
                 <!-- <button id="downloadDataBtn" type="button" class="btn btn-primary btn-xs" title="download data for selected day and dataset" style="margin-left: 10px;">Download</button> -->
             
-                <!-- <select style="background-color: grey;" class="custom-select swdi-select" id="downloadOptions">
+                <select style="background-color: grey;" class="custom-select swdi-select" id="downloadFormats">
+                    <option value="">Download</option>
                     <option value="csv">CSV</option>
                     <option value="json">JSON</option>
-                    <option value="kmz">KMZ</option>
                     <option value="xml">XML</option>
-                </select> -->
+                    <option value="kmz">KMZ</option>
+                    <option value="shp">Shapefile</option>
+                </select>
 
-                <div class="btn-group">
+                <!-- <div class="btn-group">
                     <button id="downloadDataBtn" type="button" class="btn btn-primary btn-xs">Download</button>
                     <button type="button" class="btn btn-primary dropdown-toggle btn-xs" data-toggle="dropdown">
                       <span class="caret"></span>
@@ -129,7 +131,7 @@
                       <li><a id="kmzDownloadLink">KMZ</a></li>
                       <li><a id="shpDownloadLink">Shapefile</a></li>
                     </ul>
-                </div>
+                </div> -->
             
             </div>
                 

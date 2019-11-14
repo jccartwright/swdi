@@ -22,7 +22,8 @@ require([
         'creditsPanel': document.getElementById('creditsPanel'),
         'dateSelect': document.getElementById('dateSelect'),
         'disclaimerPanel': document.getElementById('disclaimerPanel'),
-        'datasetSelect': document.getElementById('datasetSelect')
+        'datasetSelect': document.getElementById('datasetSelect'),
+        'downloadFormats': document.getElementById('downloadFormats')
     }
 
     // setup button handlers
@@ -37,9 +38,8 @@ require([
     // one style better than another?
     //dateSelect.addEventListener("change", dateChangeHandler);
 
-    on(dom.byId('downloadDataBtn'), 'click', downloadDailyData);
-    // var downloadOptions = document.getElementById('downloadOptions');
-    // downloadOptions.addEventListener("change", downloadOptionsHandler);
+    // on(dom.byId('downloadDataBtn'), 'click', downloadDailyData);
+    domElements.downloadFormats.addEventListener("change", downloadFormatChangeHandler);
 
 
     var yearSelect = dom.byId('yearSelect');
@@ -163,6 +163,53 @@ require([
     //  
     // supporting functions
     //
+    function downloadFormatChangeHandler(evt) {
+        // console.log('inside downloadFormatChangeHandler with ', evt);
+        var format = evt.target.options[evt.target.selectedIndex].value;
+        if (! format) {
+            alert("you must choose a valid format in which to download the day's data");
+            return;
+        }
+
+        // global geolocation
+
+        var datasetSelect = document.getElementById('datasetSelect');
+        var dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
+
+        var dateSelect = document.getElementById('dateSelect');
+        var day = dateSelect.options[dateSelect.selectedIndex].value;
+        // reformat day value into yyyymmdd
+        var date = day.split('-').join('');
+
+        switch(format) {
+            case 'csv':
+                var url = 'https://www.ncdc.noaa.gov/swdiws/csv/' + dataset + '/' + date + '?tile=' + geolocation; 
+                break;
+
+            case 'json':
+                url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + date + '?tile=' + geolocation; 
+                break;
+
+            case 'xml':
+                url = 'https://www.ncdc.noaa.gov/swdiws/xml/' + dataset + '/' + date + '?tile=' + geolocation; 
+                break;
+
+            case 'kmz':
+                url = 'https://www.ncdc.noaa.gov/swdiws/kmz/' + dataset + '/' + date + '?tile=' + geolocation; 
+                break;
+
+            case 'shp':
+                url = 'https://www.ncdc.noaa.gov/swdiws/shp/' + dataset + '/' + date + '?tile=' + geolocation; 
+                break;
+
+            default:
+                alert("you must choose a valid format in which to download the day's data");
+                return;
+        }
+        window.open(url);
+    }
+
+
     function downloadDailyData() {
         // console.log('inside downloadDailyData...');
         var dateSelect = document.getElementById('dateSelect');
@@ -341,6 +388,9 @@ require([
     
     
     function clearDateSelect() {
+        var downloadFormatsSelect = document.getElementById('downloadFormats');
+        downloadFormatsSelect.selectedIndex = 0;
+
         hideDateSelect();
         var dateSelect = document.getElementById('dateSelect');
     
@@ -412,11 +462,12 @@ require([
         clearPoints();
         clearDateSelect();
         displayMessage(welcomeMessage);
+        selectedDay = null;
     }
 
 
     function dateChangeHandler(evt) {
-        console.log('inside dataChangeHandler: ', selectedDay);
+        // console.log('inside dataChangeHandler: ', selectedDay);
 
         // var day = evt.target.options[evt.target.selectedIndex].value;
         var dateSelect = document.getElementById('dateSelect');
@@ -445,7 +496,7 @@ require([
         var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + date;
         // console.log("retrieving data for " + dataset + " on " + day, url);
 
-        updateDownloadLinks(dataset, date, geolocation);
+        // updateDownloadLinks(dataset, date, geolocation);
 
         esriRequest(url, {
             query: {
@@ -454,7 +505,7 @@ require([
             responseType: "json"
         }).then(function (response) {
             var dailyData = response.data;
-              console.log(dailyData.result);
+            // console.log(dailyData.result);
 
             displayMessage(dailyData.result.length + ' events retrieved.');
 

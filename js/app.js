@@ -14,7 +14,16 @@ require([
 
     // WARNING: global variable
     var geolocation = null;
-
+    var selectedDay = null;
+    // convenience to reduce noise in referencing DOM elements
+    var domElements = {
+        'downloadPanel': document.getElementById('downloadPanel'),
+        'introPanel': document.getElementById('introPanel'),
+        'creditsPanel': document.getElementById('creditsPanel'),
+        'dateSelect': document.getElementById('dateSelect'),
+        'disclaimerPanel': document.getElementById('disclaimerPanel'),
+        'datasetSelect': document.getElementById('datasetSelect')
+    }
 
     // setup button handlers
     // var getDataButton = dom.byId('getDataButton');
@@ -274,8 +283,19 @@ require([
             // populate date select
             addDateSelectOptions(summaryData.result);
 
-            // fire the handler to display the first day
-            dateChangeHandler();
+            // default to the previously selected day, if any
+            var dateSelect = document.getElementById('dateSelect');
+            var inputGroup = document.getElementById('dateInputGroup');
+            if (! selectedDay || selectedDay === dateSelect.options[dateSelect.selectedIndex].value) {
+                // fire the handler to display the previously selected day or default to first in list
+                dateChangeHandler();
+    
+            } else {
+                // no data for this tile, dataset, and date
+                hideDateSelect();
+                displayMessage("no data found for " + dataset + ' on '+ selectedDay);
+            }
+        
         });
     }
 
@@ -301,21 +321,29 @@ require([
             var option = document.createElement("option");
             option.value = result.DAY;
             option.text = result.DAY + ' (' + result.FCOUNT + ' events)';
+            if (option.value == selectedDay) {
+                option.selected = 'selected';
+            }
             dateSelect.add(option);
         });
         dateSelect.style.setProperty('display', 'inline-block');
         inputGroup.style.setProperty('display', 'inline-block');
-
     }
 
 
-    function clearDateSelect() {
+    function hideDateSelect() {
         var dateSelect = document.getElementById('dateSelect');
         // dateSelect.style.setProperty('display', 'none')
 
         var inputGroup = document.getElementById('dateInputGroup');
         inputGroup.style.setProperty('display', 'none')
-
+    }
+    
+    
+    function clearDateSelect() {
+        hideDateSelect();
+        var dateSelect = document.getElementById('dateSelect');
+    
         var i;
         for (i = dateSelect.options.length - 1; i >= 0; i--) {
             dateSelect.remove(i);
@@ -388,6 +416,8 @@ require([
 
 
     function dateChangeHandler(evt) {
+        console.log('inside dataChangeHandler: ', selectedDay);
+
         // var day = evt.target.options[evt.target.selectedIndex].value;
         var dateSelect = document.getElementById('dateSelect');
         // shouldn't be possible to see this select w/o year summary data
@@ -396,6 +426,7 @@ require([
             return;
         }
         var day = dateSelect.options[dateSelect.selectedIndex].value;
+        selectedDay = day;
 
         getDailyData(day);
     }
@@ -423,7 +454,7 @@ require([
             responseType: "json"
         }).then(function (response) {
             var dailyData = response.data;
-            //   console.log(dailyData.result);
+              console.log(dailyData.result);
 
             displayMessage(dailyData.result.length + ' events retrieved.');
 
@@ -459,9 +490,11 @@ require([
         switch (dataset) {
             case 'nx3structure':
             case 'nx3structure_all':
+                return(parseNx3structure(results));
+
             case 'nx3hail':
             case 'nx3hail_all':
-                return(parseNx3structure(results));
+                    return(parseNx3hail(results));
 
             case 'nx3meso':
                 // have yet to find a response example
@@ -510,6 +543,24 @@ require([
        })
 
        return({'events': parsedData, 'dataset':'nx3structure'});
+    }
+
+
+    function parseNx3hail(results) {
+        /* 
+        e.g.
+            [
+            {"PROB":"100","SHAPE":"POINT (-105.022116449117 39.6794851127902)","WSR_ID":"KPUX","CELL_ID":"U5","ZTIME":"2019-05-28T07:05:57Z","SEVPROB":"70","MAXSIZE":"1.25"}
+            ]
+        */
+        var parsedData = [];
+        results.forEach(function(result) {
+            var coords = extractCoordsFromWKT(result.SHAPE)
+            result.SHAPE = coords;
+            parsedData.push(result)
+       })
+
+       return({'events': parsedData, 'dataset':'nx3hail'});
     }
 
 
@@ -629,11 +680,14 @@ require([
         switch (att.dataset) {
             case 'nx3structure':
             case 'nx3structure_all':
+                return(`Time(UTC): ${att.ZTIME}<br>Radar ID: ${att.WSR_ID}<br>DBZ: ${att.MAX_REFLECT}<br>VIL:${att.VIL} kg/m&sup2;<br>Azimuth: ${att.AZIMUTH}&deg;<br>Range: ${att.RANGE} nm<br>lat/lon: ${marker.geometry.latitude.toFixed(3)}, ${marker.geometry.longitude.toFixed(3)}`)
+
             case 'nx3hail':
             case 'nx3hail_all':                
-                return(`Time(UTC): ${att.ZTIME}<br>Radar ID: ${att.WSR_ID}<br>DBZ: ${att.MAX_REFLECT}<br>VIL:${att.VIL} kg/m&sup2;<br>Azimuth: ${att.AZIMUTH}&deg;<br>Range: ${att.RANGE} nm<br>lat/lon: ${marker.geometry.latitude.toFixed(3)}, ${marker.geometry.longitude.toFixed(3)}`)
-            
+                return(`Time(UTC): ${att.ZTIME}<br>Radar ID: ${att.WSR_ID}<br>Probability: ${att.PROB}&percnt;<br>Severe Probability: ${att.SEVPROB}&percnt;<br>Max Size: ${att.MAXSIZE} inches<br>lat/lon: ${marker.geometry.latitude.toFixed(3)}, ${marker.geometry.longitude.toFixed(3)}`)
+                        
             case 'nx3meso':
+                // TODO 
                 break;
 
             case 'nx3mda':
@@ -643,6 +697,7 @@ require([
                 return(`Time(UTC): ${att.ZTIME}<br>Radar ID: ${att.WSR_ID}<br>Cell Type: ${att.CELL_TYPE}<br>Max Shear:${att.MAX_SHEAR} E-3/s<br>MXDV: ${att.MXDV} kts<br>Azimuth: ${att.AZIMUTH}&deg;<br>Range: ${att.RANGE} nm<br>lat/lon: ${marker.geometry.latitude.toFixed(3)}, ${marker.geometry.longitude.toFixed(3)}`)
 
             case 'plsr':
+                // TODO
                 break;
 
             case 'nldn':

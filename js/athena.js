@@ -1,136 +1,27 @@
 require([
     "dojo/on",
     "dojo/dom",
+    "esri/config",
     "esri/Graphic",
     "esri/layers/GraphicsLayer",
+    "esri/layers/CSVLayer",
+    "esri/layers/FeatureLayer",
+    "esri/layers/MapImageLayer",
     "esri/Map",
     "esri/views/MapView",
     "esri/request",
     "esri/widgets/Home",
     "esri/widgets/Search",
     "esri/geometry/support/webMercatorUtils"
-], function (on, dom, Graphic, GraphicsLayer, Map, MapView, esriRequest, Home, Search, webMercatorUtils) {
+], function (on, dom, esriConfig, Graphic, GraphicsLayer, CSVLayer, FeatureLayer, MapImageLayer, Map, MapView, esriRequest, Home, Search, webMercatorUtils) {
     const CONUS_CENTROID = [-98.5795, 39.8283];
 
     // WARNING: global variable
     var geolocation = null;
 
-
     // setup button handlers
-    // var getDataButton = dom.byId('getDataButton');
-    // on(getDataButton, "click", getSummaryData);
-    var resetButton = dom.byId('resetButton');
-    on(resetButton, "click", reset);
-    var dateSelect = dom.byId('dateSelect');
-    on(dateSelect, "change", dateChangeHandler);
-    var dateSelect = dom.byId('datasetSelect');
-    on(datasetSelect, "change", getSummaryData);
-    // one style better than another?
-    //dateSelect.addEventListener("change", dateChangeHandler);
-    on(dom.byId('downloadDataBtn'), 'click', downloadDailyData);
-
-    var yearSelect = dom.byId('yearSelect');
-    on(yearSelect, 'change', getSummaryData);
-
-    on(document.getElementById('wsBtn'), 'click', function(){
-        window.open('https://www.ncdc.noaa.gov/swdiws');
-    });
-    // var elem = document.getElementById('wsBtn');
-    // elem.addEventListener('click', function() {
-    //     console.log('here');
-    //     window.open('https://www.ncdc.noaa.gov/swdiws');
-    // });
-
-    document.querySelectorAll(".submenu-btn").forEach(function(btn){
-        btn.addEventListener('click', function(){
-            togglePanel(btn.dataset.panel);
-        })
-    });
-    
-
-    document.querySelectorAll(".help-panel").forEach(function(panel){
-        panel.addEventListener('click', function(){
-            panel.style.display = 'none';
-        })
-    });
-
-
-    function togglePanel(panelName) {
-        document.querySelectorAll(".help-panel").forEach(function(panel){
-            // toggle selected panel; hide any others
-            if (panel.id == panelName && panel.style.display == 'none') {
-                panel.style.display = 'inline-block';
-            } else {
-                panel.style.display = 'none';
-            }        
-        })
-    }
-
-    function downloadDailyData() {
-        console.log('inside downloadDailyData...');
-        var dateSelect = document.getElementById('dateSelect');
-
-        var day = dateSelect.options[dateSelect.selectedIndex].value;
-        // reformat day value into yyyymmdd
-        var date = day.split('-').join('');
-
-        var datasetSelect = document.getElementById('datasetSelect');
-        var dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
-
-        var url = 'https://www.ncdc.noaa.gov/swdiws/csv/' + dataset + '/' + date + '?tile=' + geolocation;
-        console.log("retrieving data for " + dataset + " on " + day, url);
-
-        window.open(url);
-    }
-
-
-    function toggleIntroPanel() {
-        var panel = document.getElementById('introPanel');
-        if (panel.style.display == 'none') {
-            panel.style.display = 'inline-block';
-        } else {
-            panel.style.display = 'none';
-        }
-        document.getElementById('downloadPanel').style.display = 'none';
-        document.getElementById('disclaimerPanel').style.display = 'none';
-        document.getElementById('creditsPanel').style.display = 'none';
-    }
-
-    function toggleDownloadPanel() {
-        var panel = document.getElementById('downloadPanel');
-        if (panel.style.display == 'none') {
-            panel.style.display = 'inline-block';
-        } else {
-            panel.style.display = 'none';
-        }    
-        document.getElementById('introPanel').style.display = 'none';
-        document.getElementById('disclaimerPanel').style.display = 'none';
-        document.getElementById('creditsPanel').style.display = 'none';
-    }
-
-    function toggleDisclaimerPanel() {
-        var panel = document.getElementById('disclaimerPanel');
-        if (panel.style.display == 'none') {
-            panel.style.display = 'inline-block';
-        } else {
-            panel.style.display = 'none';
-        }
-        document.getElementById('downloadPanel').style.display = 'none';
-        document.getElementById('introPanel').style.display = 'none';
-        document.getElementById('creditsPanel').style.display = 'none';
-    }
-
-    function toggleCreditsPanel() {
-        var panel = document.getElementById('creditsPanel');
-        if (panel.style.display == 'none') {
-            panel.style.display = 'inline-block';
-        } else {
-            panel.style.display = 'none';
-        }
-        document.getElementById('downloadPanel').style.display = 'none';
-        document.getElementById('introPanel').style.display = 'none';
-        document.getElementById('disclaimerPanel').style.display = 'none';
-    }
+    var getDataButton = dom.byId('getDataButton');
+    getDataButton.addEventListener("click", getDataHandler);
 
     // TODO fill symbol not working
     // Create a symbol for rendering the tile boundary graphic
@@ -156,8 +47,17 @@ require([
 
     // setup map and view
     var map = new Map({
-        basemap: "streets"
+        basemap: "oceans"
     });
+    var csb = new MapImageLayer({
+        url: "https://gis.ngdc.noaa.gov/arcgis/rest/services/csb/MapServer"
+    });
+    map.add(csb);
+    // var csb_lines = new FeatureLayer({ 
+    //     // url: "https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/0"
+    //     url: "https://gis.ngdc.noaa.gov/arcgis/rest/services/csb/MapServer/0"
+    // });
+    // map.add(csb_lines);
 
     // points for the select dataset and date
     var pointsLayer = new GraphicsLayer({ title: 'events' });
@@ -199,7 +99,7 @@ require([
             }
         });
     });
-
+/*
     // view click conflicts w/ the popup on Graphic  
     view.on("click", function (event) {
         // don't need popup since just collecting the coordinate
@@ -211,7 +111,7 @@ require([
         // match the zoom level used by Search widget
         view.goTo({ target: event.mapPoint, zoom: 12 }, { duration: 2000 })
     });
-
+*/
     // geocode widget
     var searchWidget = new Search({
         view: view,
@@ -234,6 +134,49 @@ require([
     //  
     // supporting functions
     // 
+    function getDataHandler() {
+        // console.log('inside getDataHandler...');
+        displayMessage("executing query, please standby...");
+
+
+        const url = 'https://3si1n6xzq9.execute-api.us-east-2.amazonaws.com/csbPSEbeta';
+        const payload = {
+            "platform.name": "Tenacity",
+            "bbox": "-140.0,24.0,-110.0,32.0",
+            "sdate": "2015-01-01T00:00:00",
+            "edate": "2019-10-01T23:59:00"
+        };
+
+        esriRequest(url, {
+            method: 'post',
+            responseType: "json",
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': 'kKF6wdaZgn6XtYuUWXzbZamD6gMKkjl9pGkFPXU1'
+            },
+            body: JSON.stringify(payload)
+        }).then(function (response) {
+            console.log(response.data.access_url);
+            loadPoints(response.data.access_url);
+        });
+    }
+
+
+    function loadPoints(url) {
+        displayMessage("loading query results. Please standby...");
+        console.log('loading URL '+url);
+        // url = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.csv';
+        // url = '92f55401-be67-485e-b79d-0f0bc24eea25.csv';
+        var csvLayer = new CSVLayer({
+            url: url,
+            copyright: "AWS Athena results",
+            latitudeField: '"lat"',
+            longitudeField: '"lon"'
+        });
+        map.add(csvLayer);
+    }
+
+
     function getSummaryData(evt) {
         // console.log('inside getSummaryData()...', evt);
         if (!geolocation) {
@@ -254,14 +197,12 @@ require([
         var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + startYear + '0101:' + endYear + '0101';
         console.log("retrieving summary data for " + dataset + ' in '+ startYear, url);
         displayMessage("retrieving summary data for " + dataset + ' in '+ startYear + ". Please standby...");
-        toggleSpinner();
         esriRequest(url, {
             query: {
                 stat: "tilesum:" + geolocation
             },
             responseType: "json"
         }).then(function (response) {
-            toggleSpinner();
             var summaryData = response.data;
             //   console.log(summaryData);
             var stats = countSummaryData(summaryData.result);
@@ -273,19 +214,6 @@ require([
             // fire the handler to display the first day
             dateChangeHandler();
         });
-    }
-
-
-    function toggleSpinner() {
-        console.log('inside toggleSpinner...');
-        loadingDiv = document.getElementById('loadingDiv');
-        console.log(loadingDiv.style.display);
-        if (loadingDiv.style.display == 'none') {
-            loadingDiv.style.display = 'inline-block';
-        } else {
-            loadingDiv.style.display = 'none';
-        }        
-
     }
 
 
@@ -502,12 +430,10 @@ require([
 //
 // the follow don't have any JSAPI dependencies and are outside the module loading callback
 //
-var welcomeMessage = "Welcome to NOAA's Severe Weather Data Inventory.<br>Begin by searching for a location of interest...";
+var welcomeMessage = "";
 
 function init() {
-    // console.log('inside init...');
-    populateYearSelect();
-    displayMessage(welcomeMessage);
+    console.log('inside init...');
 }
 
 

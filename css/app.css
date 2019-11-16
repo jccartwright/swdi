@@ -202,9 +202,23 @@ grid-area: map;
     height: 300px;
     -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
-    display:none;
+    display: none;
 }
 
 #creditsPanel a {
     color: white;
+}
+
+.submenu-btn {
+}
+
+.help-panel {
+    display: none;
+}
+
+#loadingDiv {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    display: none;
 }

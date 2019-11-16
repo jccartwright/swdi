@@ -32,11 +32,11 @@
           NOAA's Severe Weather Data Inventory
           <div id="navDiv">
             <nav id="submenu">
-                <button id="introBtn" class="btn btn-primary btn-xs" type="submit">Introduction</button>
-                <button id="wsBtn" class="btn btn-primary btn-xs" type="submit">Web Services</button>
-                <button id="downloadBtn" class="btn btn-primary btn-xs" type="submit">Bulk Download</button>
-                <button id="disclaimerBtn" class="btn btn-primary btn-xs" type="submit">Disclaimer</button>
-                <button id="creditsBtn" class="btn btn-primary btn-xs" type="submit">Credits</button>
+                <button id="introBtn" class="btn btn-primary btn-xs submenu-btn" type="button" data-panel="introPanel">Introduction</button>
+                <button id="wsBtn" class="btn btn-primary btn-xs" type="button">Web Services</button>
+                <button id="downloadBtn" class="btn btn-primary btn-xs submenu-btn" type="button" data-panel="downloadPanel">Bulk Download</button>
+                <button id="disclaimerBtn" class="btn btn-primary btn-xs submenu-btn" type="button" data-panel="disclaimerPanel">Disclaimer</button>
+                <button id="creditsBtn" class="btn btn-primary btn-xs submenu-btn" type="button" data-panel="creditsPanel">Credits</button>
             </nav>
           </div>
         </div>
@@ -146,11 +146,11 @@
     </div> -->
     <div id="tooltip" role="tooltip" style="display:none;"></div>
 
-    <div id="introPanel" style="display: none">
+    <div id="introPanel" class="help-panel" style="display: none">
         The Severe Weather Data Inventory (SWDI) is an integrated database of severe weather records for the United States. The records in SWDI come from a variety of sources in the NCDC archive. SWDI provides the ability to search through all of these data to find records covering a particular time period and geographic region, and to download the results of your search in a variety of formats. The formats currently supported are Shapefile (for GIS), KMZ (for Google Earth), CSV (comma-separated), and XML.
     </div>
 
-    <div id="downloadPanel" style="display: none">
+    <div id="downloadPanel" class="help-panel" style="display: none">
         Bulk Download of the SWDI database is available as comma-separated text format (CSV) files for each dataset and are available
         for download from: <br><br>
         (HTTP) <a href="https://www1.ncdc.noaa.gov/pub/data/swdi">https://www1.ncdc.noaa.gov/pub/data/swdi</a> 
@@ -160,11 +160,11 @@
         Please refer to the CHANGELOG.txt and KNOWN_ISSUES.txt files in the download directory for more information on the database.        
     </div>
 
-    <div id="disclaimerPanel" style="display: none">
+    <div id="disclaimerPanel" class="help-panel" style="display: none">
         SWDI provides a uniform way to access data from a variety of sources, but it does not provide any additional quality control beyond the processing which took place when the data were archived. The data sources in SWDI will not provide complete severe weather coverage of a geographic region or time period, due to a number of factors (eg, reports for a location or time period not provided to NOAA). The absence of SWDI data for a particular location and time should not be interpreted as an indication that no severe weather occurred at that time and location. Furthermore, much of the data in SWDI is automatically derived from radar data and represents probable conditions for an event, rather than a confirmed occurrence.
     </div>
 
-    <div id="creditsPanel" style="display: none">
+    <div id="creditsPanel" class="help-panel" style="display: none">
       <p>SWDI is a joint project of <a href="https://www.ncdc.noaa.gov">NOAA's National Climatic Data Center</a>,
       <a href="https://www.unca.edu">UNCA</a>'s <a href="https://orgs.unca.edu/nemac">National Environmental Modeling and Analysis Center</a>, and the
       <a href="https://www.renci.org">Renaissance Computing Institute</a>.</p>
@@ -178,6 +178,9 @@
         </table>
     </div>
 
+    <div id="loadingDiv">
+        <img src="images/loading.gif">
+    </div>
   </body>
 
 </html>

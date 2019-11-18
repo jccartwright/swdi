@@ -34,7 +34,7 @@ grid-area: map;
 
 .wrapper {
     display: grid;
-    grid-template-rows: 100px  300px auto 45px;
+    grid-template-rows: 100px  300px auto 235px;
     grid-template-areas:
         "header"
         "sidebar"
@@ -53,7 +53,7 @@ grid-area: map;
 @media only screen and (min-width: 544px)  {
 .wrapper {
     grid-template-columns: 320px auto;
-    grid-template-rows: 100px  auto 35px;
+    grid-template-rows: 100px  auto 135px;
     grid-template-areas:
     "header   header"
     "sidebar  map"
@@ -213,4 +213,21 @@ grid-area: map;
     left: 50%;
     top: 50%;
     display: none;
+}
+
+/* #info, #gridDisplay {
+    position: absolute;
+    bottom: 35;
+    left: 0;
+    height: 100px;
+    background-color: white;
+    border-color: grey;
+    width: 90%;
+    font-size: 14px;
+} */
+
+.dgrid .dgrid-scroller {
+    position: relative;
+    max-height: 100px;
+    overflow: auto;
 }

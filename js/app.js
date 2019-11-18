@@ -8,9 +8,32 @@ require([
     "esri/request",
     "esri/widgets/Home",
     "esri/widgets/Search",
-    "esri/geometry/support/webMercatorUtils"
-], function (on, dom, Graphic, GraphicsLayer, Map, MapView, esriRequest, Home, Search, webMercatorUtils) {
+    "esri/geometry/support/webMercatorUtils",
+    "dgrid/OnDemandGrid",
+    "dgrid/extensions/ColumnHider",
+    "dojo/store/Memory",
+    "dstore/legacy/StoreAdapter",
+    "dgrid/Selection"
+], function (
+    on, 
+    dom, 
+    Graphic, 
+    GraphicsLayer, 
+    Map, 
+    MapView, 
+    esriRequest, 
+    Home, 
+    Search, 
+    webMercatorUtils, 
+    OnDemandGrid,
+    ColumnHider,
+    Memory,
+    StoreAdapter,
+    Selection
+    ) {
     const CONUS_CENTROID = [-98.5795, 39.8283];
+    const gridDiv = document.getElementById("grid");
+
 
     // WARNING: global variable
     var geolocation = null;
@@ -26,6 +49,26 @@ require([
         'downloadFormats': document.getElementById('downloadFormats')
     }
 
+    const gridFields = [
+        "__OBJECTID",
+        "ZTIME",
+        "CELL_ID",
+        "MAX_REFLECT",
+        "RANGE",
+        "VIL",
+        "WSR_ID"
+    ];
+
+    // create a new datastore for the on demandgrid
+    // will be used to display attributes of selected features
+    const dataStore = new StoreAdapter({
+        objectStore: new Memory({
+            idProperty: "__OBJECTID"
+        })
+    });
+
+    createGrid();
+    
     // setup button handlers
     // var getDataButton = dom.byId('getDataButton');
     // on(getDataButton, "click", getSummaryData);
@@ -163,6 +206,53 @@ require([
     //  
     // supporting functions
     //
+    function createGrid(fields) {
+        console.log('inside createGrid with ', fields);
+
+        // var columns = fields
+        //   .filter(function(field, i) {
+        //     if (gridFields.indexOf(field.name) !== -1) {
+        //       return field;
+        //     }
+        //   })
+        //   .map(function(field) {
+        //     if (field.name === "__OBJECTID") {
+        //       return {
+        //         field: field.name,
+        //         label: field.name,
+        //         sortable: true,
+        //         hidden: true
+        //       };
+        //     } else {
+        //       return {
+        //         field: field.name,
+        //         label: field.alias,
+        //         sortable: true
+        //       };
+        //     }
+        //   });
+
+        var columns = [
+            {field: '__OBJECTID', label: '__OBJECTID', sortable: true, hidden: true},
+            {field: 'ZTIME', label: 'Time', sortable: true}
+        ]
+        // create a new onDemandGrid with its selection and columnhider
+        // extensions. Set the columns of the grid to display attributes
+        // the hurricanes cvslayer
+        grid = new (OnDemandGrid.createSubclass([Selection, ColumnHider]))(
+          {
+            columns: columns
+          },
+          "grid"
+        );
+
+        // add a row-click listener on the grid. This will be used
+        // to highlight the corresponding feature on the view
+        // grid.on("dgrid-select", selectFeatureFromGrid);
+        console.log('leaving createGrid...');
+      }
+
+
     function downloadFormatChangeHandler(evt) {
         // console.log('inside downloadFormatChangeHandler with ', evt);
         var format = evt.target.options[evt.target.selectedIndex].value;
@@ -210,22 +300,22 @@ require([
     }
 
 
-    function downloadDailyData() {
-        // console.log('inside downloadDailyData...');
-        var dateSelect = document.getElementById('dateSelect');
+    // function downloadDailyData() {
+    //     // console.log('inside downloadDailyData...');
+    //     var dateSelect = document.getElementById('dateSelect');
 
-        var day = dateSelect.options[dateSelect.selectedIndex].value;
-        // reformat day value into yyyymmdd
-        var date = day.split('-').join('');
+    //     var day = dateSelect.options[dateSelect.selectedIndex].value;
+    //     // reformat day value into yyyymmdd
+    //     var date = day.split('-').join('');
 
-        var datasetSelect = document.getElementById('datasetSelect');
-        var dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
+    //     var datasetSelect = document.getElementById('datasetSelect');
+    //     var dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
 
-        var url = 'https://www.ncdc.noaa.gov/swdiws/csv/' + dataset + '/' + date + '?tile=' + geolocation;
-        // console.log("retrieving data for " + dataset + " on " + day, url);
+    //     var url = 'https://www.ncdc.noaa.gov/swdiws/csv/' + dataset + '/' + date + '?tile=' + geolocation;
+    //     // console.log("retrieving data for " + dataset + " on " + day, url);
 
-        window.open(url);
-    }
+    //     window.open(url);
+    // }
 
 
     function toggleIntroPanel() {
@@ -290,7 +380,7 @@ require([
 
 
     function getSummaryData(evt) {
-        // console.log('inside getSummaryData()...', evt);
+        console.log('inside getSummaryData()...', evt);
         if (!geolocation) {
             alert("please select a geolocation");
             return;
@@ -484,6 +574,7 @@ require([
 
 
     function getDailyData(day) {
+        // console.log('inside getDailyData with ', day);
         // reformat day value into yyyymmdd
         var date = day.split('-').join('');
 
@@ -504,13 +595,27 @@ require([
             },
             responseType: "json"
         }).then(function (response) {
-            var dailyData = response.data;
-            // console.log(dailyData.result);
+            console.log(response.data.result);
+            var dailyData = response.data.result.map(function(event, i) {
+                // console.log('before', event);
+                event['__OBJECTID'] = i;
+                // console.log('after', event);
+                return(event);
+            });
+            console.log("dailyData", dailyData);
+            // createGrid(dailyData);
+            
+            console.log(dataStore);
+            console.log(grid);
+            console.log(dailyData);
+            dataStore.objectStore.data = dailyData;
+            grid.set("collection", dataStore);
 
-            displayMessage(dailyData.result.length + ' events retrieved.');
+            displayMessage(response.data.result.length + ' events retrieved.');
 
-            var results = parseDailyResults(dailyData.result, dataset)
+            var results = parseDailyResults(response.data.result, dataset)
 
+            console.log('results: ', results);
             drawPoints(results);
 
             hideSpinner();

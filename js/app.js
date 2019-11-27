@@ -620,8 +620,6 @@ require([
         var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + date;
         // console.log("retrieving data for " + dataset + " on " + day, url);
 
-        // updateDownloadLinks(dataset, date, geolocation);
-
         esriRequest(url, {
             query: {
                 tile: geolocation
@@ -660,24 +658,6 @@ require([
             displayMessage("Error retrieving data from server. Please try again later");
             hideSpinner();
         });
-    }
-
-
-    function updateDownloadLinks(dataset, date, geolocation) {
-        var url = 'https://www.ncdc.noaa.gov/swdiws/csv/' + dataset + '/' + date + '?tile=' + geolocation; 
-        document.getElementById('csvDownloadLink').href = url;
-
-        url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + date + '?tile=' + geolocation; 
-        document.getElementById('jsonDownloadLink').href = url;
-
-        url = 'https://www.ncdc.noaa.gov/swdiws/kmz/' + dataset + '/' + date + '?tile=' + geolocation; 
-        document.getElementById('kmzDownloadLink').href = url;
-
-        url = 'https://www.ncdc.noaa.gov/swdiws/xml/' + dataset + '/' + date + '?tile=' + geolocation; 
-        document.getElementById('xmlDownloadLink').href = url;
-
-        url = 'https://www.ncdc.noaa.gov/swdiws/shp/' + dataset + '/' + date + '?tile=' + geolocation; 
-        document.getElementById('shpDownloadLink').href = url;
     }
 
 

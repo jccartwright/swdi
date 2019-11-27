@@ -231,3 +231,14 @@ grid-area: map;
     max-height: 100px;
     overflow: auto;
 }
+
+.dgrid-hider-menu-label {
+    color: #112E51;
+}
+
+.dgrid-hider-menu {
+}
+
+#grid {
+    height: 100px;
+}

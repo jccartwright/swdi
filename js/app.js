@@ -66,9 +66,9 @@ require([
             idProperty: "__OBJECTID"
         })
     });
+    var grid = null;
 
-    createGrid();
-    
+
     // setup button handlers
     // var getDataButton = dom.byId('getDataButton');
     // on(getDataButton, "click", getSummaryData);
@@ -206,39 +206,64 @@ require([
     //  
     // supporting functions
     //
-    function createGrid(fields) {
-        console.log('inside createGrid with ', fields);
-
-        // var columns = fields
-        //   .filter(function(field, i) {
-        //     if (gridFields.indexOf(field.name) !== -1) {
-        //       return field;
-        //     }
-        //   })
-        //   .map(function(field) {
-        //     if (field.name === "__OBJECTID") {
-        //       return {
-        //         field: field.name,
-        //         label: field.name,
-        //         sortable: true,
-        //         hidden: true
-        //       };
-        //     } else {
-        //       return {
-        //         field: field.name,
-        //         label: field.alias,
-        //         sortable: true
-        //       };
-        //     }
-        //   });
-
+    function createGrid(datasetName) {
+        console.log('inside createGrid with ', datasetName);
         var columns = [
             {field: '__OBJECTID', label: '__OBJECTID', sortable: true, hidden: true},
-            {field: 'ZTIME', label: 'Time', sortable: true}
+            {field: 'ZTIME', label: 'Time', sortable: true},
+            {field: 'WSR_ID', label: 'WSR ID', sortable: true},
+            {field: 'CELL_ID', label: 'Cell ID', sortable: true}
         ]
+
+        switch (datasetName) {
+            case 'nx3structure':
+            case 'nx3structure_all':
+                columns.push({field: 'AZIMUTH', label: 'Azimuth', sortable: true});
+                columns.push({field: 'MAX_REFLECT', label: 'Max Reflect', sortable: true});
+                columns.push({field: 'RANGE', label: 'Range', sortable: true});
+                columns.push({field: 'VIL', label: 'VIL', sortable: true});
+                break;
+
+            case 'nx3hail':
+            case 'nx3hail_all':
+                columns.push({field: 'PROB', label: 'Probability', sortable: true});
+                columns.push({field: 'MAXSIZE', label: 'Max Size', sortable: true});
+                columns.push({field: 'SEVPROB', label: 'Severe Probability', sortable: true});
+                break;
+
+            case 'nx3meso':
+                // have yet to find a response example
+                break;
+
+            case 'nx3mda':
+                break;
+            case 'nx3tvs':
+                break;  
+            case 'plsr':
+                // have yet to find a response example
+                break;
+
+            case 'nldn':
+                break;
+
+            default:
+            console.error('unrecognized dataset: ', dataset);
+        }
+
+
+        // var columns = [
+        //     {field: '__OBJECTID', label: '__OBJECTID', sortable: true, hidden: true},
+        //     {field: 'ZTIME', label: 'Time', sortable: true}
+        // ]
         // create a new onDemandGrid with its selection and columnhider
         // extensions. Set the columns of the grid to display attributes
         // the hurricanes cvslayer
+        console.log('creating new grid with columns', columns);
+        grid = null;
+        // grid = new(declare([OnDemandGrid, Selection, ColumnHider]))({
+        //     columns: columns
+        //   }, "grid")
+
         grid = new (OnDemandGrid.createSubclass([Selection, ColumnHider]))(
           {
             columns: columns
@@ -379,8 +404,8 @@ require([
     }
 
 
-    function getSummaryData(evt) {
-        console.log('inside getSummaryData()...', evt);
+    function getSummaryData() {
+        console.log('inside getSummaryData()...');
         if (!geolocation) {
             alert("please select a geolocation");
             return;
@@ -410,6 +435,9 @@ require([
             // console.log(summaryData);
             var stats = countSummaryData(summaryData.result);
             hideSpinner();
+
+            createGrid(dataset);
+            
             if (stats.totalEvents > 0) {
                 displayMessage("data retrieved - found " + stats.totalEvents + " events across " + stats.numberOfDays + " days.");
             } else {
@@ -433,6 +461,11 @@ require([
                 displayMessage("no data found for " + dataset + ' on '+ selectedDay);
             }
         
+        },
+        function(error){
+            console.log('error in getting summary data', error);
+            displayMessage("Error retrieving data from server. Please try again later");
+            hideSpinner();
         });
     }
 
@@ -556,8 +589,8 @@ require([
     }
 
 
-    function dateChangeHandler(evt) {
-        // console.log('inside dataChangeHandler: ', selectedDay);
+    function dateChangeHandler() {
+        console.log('inside dataChangeHandler: ');
 
         // var day = evt.target.options[evt.target.selectedIndex].value;
         var dateSelect = document.getElementById('dateSelect');
@@ -574,7 +607,7 @@ require([
 
 
     function getDailyData(day) {
-        // console.log('inside getDailyData with ', day);
+        console.log('inside getDailyData with ', day);
         // reformat day value into yyyymmdd
         var date = day.split('-').join('');
 
@@ -602,14 +635,16 @@ require([
                 // console.log('after', event);
                 return(event);
             });
-            console.log("dailyData", dailyData);
+            // console.log("dailyData", dailyData);
             // createGrid(dailyData);
             
-            console.log(dataStore);
-            console.log(grid);
-            console.log(dailyData);
+            // console.log(dataStore);
+            // console.log(grid);
+            // console.log(dailyData);
             dataStore.objectStore.data = dailyData;
+            console.log('setting collection...');
             grid.set("collection", dataStore);
+            console.log("set collection", dataStore);
 
             displayMessage(response.data.result.length + ' events retrieved.');
 
@@ -618,6 +653,11 @@ require([
             console.log('results: ', results);
             drawPoints(results);
 
+            hideSpinner();
+        },
+        function(error){
+            console.log('error in getting daily data', error);
+            displayMessage("Error retrieving data from server. Please try again later");
             hideSpinner();
         });
     }

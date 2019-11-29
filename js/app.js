@@ -13,7 +13,10 @@ require([
     "dgrid/extensions/ColumnHider",
     "dojo/store/Memory",
     "dstore/legacy/StoreAdapter",
-    "dgrid/Selection"
+    "dgrid/Selection",
+    "dgrid/Grid",
+    "app/globals",
+    "dojo/domReady!"
 ], function (
     on, 
     dom, 
@@ -29,12 +32,19 @@ require([
     ColumnHider,
     Memory,
     StoreAdapter,
-    Selection
+    Selection,
+    Grid,
+    myglobals
     ) {
+    populateYearSelect();
+
+    console.log('myglobals', myglobals);
+    console.log(myglobals.getName());
+    
     const CONUS_CENTROID = [-98.5795, 39.8283];
     const gridDiv = document.getElementById("grid");
 
-
+    
     // WARNING: global variable
     var geolocation = null;
     var selectedDay = null;
@@ -46,22 +56,59 @@ require([
         'dateSelect': document.getElementById('dateSelect'),
         'disclaimerPanel': document.getElementById('disclaimerPanel'),
         'datasetSelect': document.getElementById('datasetSelect'),
-        'downloadFormats': document.getElementById('downloadFormats')
+        'downloadFormats': document.getElementById('downloadFormats'),
+        'yearSelect': document.getElementById('yearSelect')
+    }
+    
+    var state = {
+        geolocation: null,
+        // the following two variables refer to the state of the dateSelect and not the calendar
+        previousDay: null,
+        currentDay: null,
+        year: null,
+        dataset: null,
+        
+        formatDate: function() {
+            // reformat day value into yyyymmdd
+            return (this.day.split('-').join(''));
+        },
+
+        update: function() {
+            var datasetSelect = domElements.datasetSelect;
+            this.dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
+    
+            var yearSelect = domElements.yearSelect;
+            this.year = parseInt(yearSelect.options[yearSelect.selectedIndex > 0 ? yearSelect.selectedIndex: 0].value);
+    
+            var dateSelect = domElements.dateSelect;
+            if (dateSelect.options.length) {
+                this.currentDay = dateSelect.options[dateSelect.selectedIndex ? dateSelect.selectedIndex: 0].value;
+            }    
+        }
     }
 
-    const gridFields = [
-        "__OBJECTID",
-        "ZTIME",
-        "CELL_ID",
-        "MAX_REFLECT",
-        "RANGE",
-        "VIL",
-        "WSR_ID"
-    ];
+    // function updateState() {
+    //     console.log('inside updateState...');
+    //     var datasetSelect = domElements.datasetSelect;
+    //     state.dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
+
+    //     var yearSelect = domElements.yearSelect;
+    //     state.year = parseInt(yearSelect.options[yearSelect.selectedIndex > 0 ? yearSelect.selectedIndex: 0].value);
+
+    //     var dateSelect = domElements.dateSelect;
+    //     if (dateSelect.options.length) {
+    //         console.log(dateSelect);
+    //         state.currentDay = dateSelect.options[dateSelect.selectedIndex ? dateSelect.selectedIndex: 0].value;
+    //     }
+    // }
+
+    // debugging
+    state.update();
+    console.log(state);
 
     // create a new datastore for the on demandgrid
     // will be used to display attributes of selected features
-    const dataStore = new StoreAdapter({
+    let dataStore = new StoreAdapter({
         objectStore: new Memory({
             idProperty: "__OBJECTID"
         })
@@ -81,7 +128,6 @@ require([
     // one style better than another?
     //dateSelect.addEventListener("change", dateChangeHandler);
 
-    // on(dom.byId('downloadDataBtn'), 'click', downloadDailyData);
     domElements.downloadFormats.addEventListener("change", downloadFormatChangeHandler);
 
 
@@ -208,6 +254,9 @@ require([
     //
     function createGrid(datasetName) {
         console.log('inside createGrid with ', datasetName);
+        // clearGrid();
+
+        // fields common to all datasets
         var columns = [
             {field: '__OBJECTID', label: '__OBJECTID', sortable: true, hidden: true},
             {field: 'ZTIME', label: 'Time', sortable: true},
@@ -215,6 +264,7 @@ require([
             {field: 'CELL_ID', label: 'Cell ID', sortable: true}
         ]
 
+        // add fields unique to given dataset
         switch (datasetName) {
             case 'nx3structure':
             case 'nx3structure_all':
@@ -259,17 +309,21 @@ require([
         // extensions. Set the columns of the grid to display attributes
         // the hurricanes cvslayer
         console.log('creating new grid with columns', columns);
-        grid = null;
+        // grid = null;
         // grid = new(declare([OnDemandGrid, Selection, ColumnHider]))({
         //     columns: columns
         //   }, "grid")
 
-        grid = new (OnDemandGrid.createSubclass([Selection, ColumnHider]))(
-          {
+        // grid = new (OnDemandGrid.createSubclass([Selection, ColumnHider]))(
+        //   {
+        //     columns: columns
+        //   },
+        //   "grid"
+        // );
+
+        grid = new Grid({
             columns: columns
-          },
-          "grid"
-        );
+        }, 'grid');
 
         // add a row-click listener on the grid. This will be used
         // to highlight the corresponding feature on the view
@@ -323,24 +377,6 @@ require([
         }
         window.open(url);
     }
-
-
-    // function downloadDailyData() {
-    //     // console.log('inside downloadDailyData...');
-    //     var dateSelect = document.getElementById('dateSelect');
-
-    //     var day = dateSelect.options[dateSelect.selectedIndex].value;
-    //     // reformat day value into yyyymmdd
-    //     var date = day.split('-').join('');
-
-    //     var datasetSelect = document.getElementById('datasetSelect');
-    //     var dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
-
-    //     var url = 'https://www.ncdc.noaa.gov/swdiws/csv/' + dataset + '/' + date + '?tile=' + geolocation;
-    //     // console.log("retrieving data for " + dataset + " on " + day, url);
-
-    //     window.open(url);
-    // }
 
 
     function toggleIntroPanel() {
@@ -404,12 +440,19 @@ require([
     }
 
 
+    function newTileOrDatasetSelected() {
+
+    }
+
     function getSummaryData() {
         console.log('inside getSummaryData()...');
         if (!geolocation) {
             alert("please select a geolocation");
             return;
         }
+
+        state.update();
+        console.log(state);
 
         // empty out Date select and points while waiting on new annual summary data
         clearDateSelect();
@@ -592,6 +635,9 @@ require([
     function dateChangeHandler() {
         console.log('inside dataChangeHandler: ');
 
+        state.update();
+        console.log(state);
+
         // var day = evt.target.options[evt.target.selectedIndex].value;
         var dateSelect = document.getElementById('dateSelect');
         // shouldn't be possible to see this select w/o year summary data
@@ -603,6 +649,14 @@ require([
         selectedDay = day;
 
         getDailyData(day);
+    }
+
+
+    function clearGrid() {
+        if(grid){
+            dataStore.objectStore.data = {};
+            grid.set("collection", dataStore);
+        }
     }
 
 
@@ -634,14 +688,16 @@ require([
                 return(event);
             });
             // console.log("dailyData", dailyData);
-            // createGrid(dailyData);
+            // createGrid(dataset);
             
             // console.log(dataStore);
-            // console.log(grid);
-            // console.log(dailyData);
-            dataStore.objectStore.data = dailyData;
+            console.log(grid);
+            console.log(dailyData);
+            //dataStore.objectStore.data = dailyData;
             console.log('setting collection...');
-            grid.set("collection", dataStore);
+            // grid.set("collection", dataStore);
+            grid.refresh();
+            grid.renderArray(dailyData);
             console.log("set collection", dataStore);
 
             displayMessage(response.data.result.length + ' events retrieved.');
@@ -911,6 +967,7 @@ require([
           };
         }
       }
+
 });
 
 

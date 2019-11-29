@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>ArcGIS JavaScript Tutorials: Create a JavaScript starter app</title>
+    <style>
+      html, body {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+      #viewDiv {
+          background-color: red;
+          height: 400px;
+      }
+
+      #gridDiv {
+          background-color: green;
+          height: 200px;
+      }
+
+      #controlPanel {
+          padding: 10px;
+          background-color: blue;
+          height: 100px;
+
+      }
+    </style>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.13/esri/themes/light/main.css">
+    <script src="https://js.arcgis.com/4.13/"></script>
+  </head>
+  <body>
+    <div id="viewDiv"></div>
+    <div id="gridDiv"></div>
+    <div id="controlPanel">
+        <button id="updateDataBtn" type="button">Update Data</button>
+        <button id="updateGridBtn" type="button">Update Grid</button>
+        <button id="resetGridBtn" type="button">Reset Grid</button>
+    </div>
+    <script>
+    require([
+        'dojo/_base/declare',
+        "dgrid/Grid",
+        "dgrid/OnDemandGrid",
+        "dgrid/extensions/ColumnHider",
+        "dojo/store/Memory",
+        "dojo/dom-class",
+        "dojo/on",
+        "dstore/legacy/StoreAdapter",
+        "dgrid/Selection",
+        "esri/Map",
+        "esri/views/MapView",
+        "dojo/domReady!"
+    ], function(declare, Grid, OnDemandGrid, ColumnHider, Memory, domClass, on, StoreAdapter, Selection, Map, MapView) {
+
+        const updateDataBtn = document.getElementById("updateDataBtn");
+        const updateGridBtn = document.getElementById("updateGridBtn");
+        const resetGridBtn = document.getElementById("resetGridBtn");
+
+        updateDataBtn.addEventListener("click", updateData2);
+        updateGridBtn.addEventListener("click", updateGrid2);
+        resetGridBtn.addEventListener("click", resetGrid2);
+
+        let grid;
+
+        const gridFields = [
+          "OBJECTID",
+          "One",
+          "Two",
+          "Three"
+        ];
+
+        const dataStore = new StoreAdapter({
+          objectStore: new Memory({
+            idProperty: "OBJECTID"
+          })
+        });
+
+        initGrid2();
+
+        function selectFeatureFromGrid(evt) {
+            console.log('inside selectFeatureFromGrid...');
+            console.log(evt);
+        } 
+
+        function initGrid2() {
+            grid = new (OnDemandGrid.createSubclass([Selection, ColumnHider]))( {
+                columns: [
+                    {field: "OBJECTID", label: "OBJECTID", sortable: true, hidden: true},
+                    {field: "ONE", label: "One", sortable: true, hidden: true},
+                    {field: "TWO", label: "Two", sortable: true, hidden: false},
+                    {field: "THREE", label: "Three", sortable: true, hidden: false}
+                ]
+            }, "gridDiv");
+            grid.on("dgrid-select", selectFeatureFromGrid);
+
+
+            dataStore.objectStore.data = [
+                {"OBJECTID": 0, "ONE": 1, "TWO": 2, "THREE": 3, "FOUR": 4},
+                {"OBJECTID": 1, "ONE": 5, "TWO": 6, "THREE": 7, "FOUR": 8},
+                {"OBJECTID": 2, "ONE": 9, "TWO": 10, "THREE": 11, "FOUR": 12}];
+            grid.set("collection", dataStore);
+
+        }
+
+        function updateData2() {
+            dataStore.objectStore.data = [
+                {"OBJECTID": 0, "ONE": 1, "TWO": 4, "THREE": 7, "FOUR": 10},
+                {"OBJECTID": 1, "ONE": 2, "TWO": 5, "THREE": 8, "FOUR": 11},
+                {"OBJECTID": 2, "ONE": 3, "TWO": 6, "THREE": 9, "FOUR": 12}];
+            grid.set("collection", dataStore);
+        }
+
+        function updateGrid2() {
+            dataStore.objectStore.data = {};
+            grid.set("collection", dataStore);
+            // gridDiv.style.display = 'none';
+
+            var columns = [
+                    {field: "OBJECTID", label: "OBJECTID", sortable: true, hidden: true},
+                    {field: "A", label: "A", sortable: true, hidden: false},
+                    {field: "B", label: "B", sortable: true, hidden: false}
+            ]
+
+            // hack to override column settings from previous grid
+            grid._setColumns(columns);
+
+            grid = new (OnDemandGrid.createSubclass([Selection, ColumnHider]))( {
+                columns: columns,
+                selectionMode: "single"
+            }, "gridDiv");
+            //why doesn't this work?
+            // grid = new (declare([OnDemandGrid, Selection, ColumnHider]))({
+            //     selectionMode: 'single',
+            //     columns: columns
+            // }, "grid");
+
+            // grid.on("dgrid-select", selectFeatureFromGrid);
+        
+            dataStore.objectStore.data = [
+                {"OBJECTID": 0, "A": 1, "B": 2, "C": 3},
+                {"OBJECTID": 1, "A": 5, "B": 6, "C": 7}];
+            grid.set("collection", dataStore);
+
+            // gridDiv.style.display = 'block';
+
+        }
+
+        function resetGrid2() {
+            dataStore.objectStore.data = {};
+            grid.set("collection", dataStore);
+        }
+
+
+        function initGrid() {
+            var columns = {
+                first: 'First Name',
+                last: 'Last Name',
+                age: 'Age'
+            };
+            grid = new Grid({
+                columns: columns    
+            }, 'gridDiv');
+            var data = [
+                { first: 'Bob', last: 'Barker', age: 89 },
+                { first: 'Vanna', last: 'White', age: 55 },
+                { first: 'Pat', last: 'Sajak', age: 65 }
+            ];
+            grid.renderArray(data);
+        }
+
+
+        function updateData() {
+            console.log('inside updateData...');
+            var data = [
+                { first: 'John', last: 'Cartwright', age: 57 },
+                { first: 'Robbie', last: 'Cartwright', age: 56 },
+                { first: 'Gattini', last: 'Cartwright', age: 8 },
+                { first: 'Bodacious', last: 'Cartwright', age: 8 }
+            ];
+            grid.refresh();
+            grid.renderArray(data);
+        }
+
+
+        function updateGrid() {
+            console.log('inside updateGrid...');
+            var columns = {
+                one: 'One',
+                two: 'Two',
+                three: 'Three',
+                four: 'Four'
+            };
+            grid.refresh();
+            // necessary?
+            grid.destroy();
+            grid = new Grid({
+                columns: columns    
+            }, 'gridDiv');
+
+            grid.renderArray([
+                {one: "1"},
+                {two: "2"}
+            ]);
+            console.dir(grid);
+        }
+
+
+        function resetGrid() {
+            console.log('inside resetGrid...');
+            grid.refresh();
+        }
+
+
+        var map = new Map({
+            basemap: "topo-vector"
+        });
+
+        var view = new MapView({
+        container: "viewDiv",
+        map: map,
+        center: [-105, 40],
+        zoom: 10
+        });
+    });
+
+    </script>
+  </body>
+</html>

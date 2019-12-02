@@ -45,7 +45,8 @@
         "dgrid/Grid",
         "dgrid/OnDemandGrid",
         "dgrid/extensions/ColumnHider",
-        "dojo/store/Memory",
+        "dstore/Memory",
+        // "dojo/store/Memory",
         "dojo/dom-class",
         "dojo/on",
         "dstore/legacy/StoreAdapter",
@@ -63,6 +64,9 @@
         updateGridBtn.addEventListener("click", updateGrid2);
         resetGridBtn.addEventListener("click", resetGrid2);
 
+        var SelectionGrid = declare([Grid, Selection, ColumnHider]);
+        var SelectionGrid2 = declare([OnDemandGrid, Selection, ColumnHider]);
+
         let grid;
 
         const gridFields = [
@@ -72,10 +76,13 @@
           "Three"
         ];
 
-        const dataStore = new StoreAdapter({
-          objectStore: new Memory({
+        // const dataStore = new StoreAdapter({
+        //   objectStore: new Memory({
+        //     idProperty: "OBJECTID"
+        //   })
+        // });
+        const dataStore = new Memory({
             idProperty: "OBJECTID"
-          })
         });
 
         initGrid2();
@@ -86,6 +93,7 @@
         } 
 
         function initGrid2() {
+            console.log('inside initGrid2...');
             grid = new (OnDemandGrid.createSubclass([Selection, ColumnHider]))( {
                 columns: [
                     {field: "OBJECTID", label: "OBJECTID", sortable: true, hidden: true},
@@ -97,25 +105,35 @@
             grid.on("dgrid-select", selectFeatureFromGrid);
 
 
-            dataStore.objectStore.data = [
+            // dataStore.objectStore.data = [
+            //     {"OBJECTID": 0, "ONE": 1, "TWO": 2, "THREE": 3, "FOUR": 4},
+            //     {"OBJECTID": 1, "ONE": 5, "TWO": 6, "THREE": 7, "FOUR": 8},
+            //     {"OBJECTID": 2, "ONE": 9, "TWO": 10, "THREE": 11, "FOUR": 12}];
+            dataStore.setData([
                 {"OBJECTID": 0, "ONE": 1, "TWO": 2, "THREE": 3, "FOUR": 4},
                 {"OBJECTID": 1, "ONE": 5, "TWO": 6, "THREE": 7, "FOUR": 8},
-                {"OBJECTID": 2, "ONE": 9, "TWO": 10, "THREE": 11, "FOUR": 12}];
+                {"OBJECTID": 2, "ONE": 9, "TWO": 10, "THREE": 11, "FOUR": 12}]);
             grid.set("collection", dataStore);
-
         }
 
         function updateData2() {
-            dataStore.objectStore.data = [
+            // dataStore.objectStore.data = [
+            //     {"OBJECTID": 0, "ONE": 1, "TWO": 4, "THREE": 7, "FOUR": 10},
+            //     {"OBJECTID": 1, "ONE": 2, "TWO": 5, "THREE": 8, "FOUR": 11},
+            //     {"OBJECTID": 2, "ONE": 3, "TWO": 6, "THREE": 9, "FOUR": 12}];
+            dataStore.setData([
                 {"OBJECTID": 0, "ONE": 1, "TWO": 4, "THREE": 7, "FOUR": 10},
                 {"OBJECTID": 1, "ONE": 2, "TWO": 5, "THREE": 8, "FOUR": 11},
-                {"OBJECTID": 2, "ONE": 3, "TWO": 6, "THREE": 9, "FOUR": 12}];
+                {"OBJECTID": 2, "ONE": 3, "TWO": 6, "THREE": 9, "FOUR": 12}]);
             grid.set("collection", dataStore);
         }
 
         function updateGrid2() {
-            dataStore.objectStore.data = {};
+            //dataStore.objectStore.data = {};
+            // hack to avoid "TypeError: Cannot read property 'element' of undefined"
+            dataStore.setData([]);
             grid.set("collection", dataStore);
+
             // gridDiv.style.display = 'none';
 
             var columns = [
@@ -127,22 +145,29 @@
             // hack to override column settings from previous grid
             grid._setColumns(columns);
 
-            grid = new (OnDemandGrid.createSubclass([Selection, ColumnHider]))( {
-                columns: columns,
-                selectionMode: "single"
+            // grid = new (OnDemandGrid.createSubclass([Selection, ColumnHider]))( {
+            //     columns: columns,
+            //     selectionMode: "single"
+            // }, "gridDiv");
+            grid = new SelectionGrid2({
+                selectionMode: 'single',
+                columns: columns
             }, "gridDiv");
-            //why doesn't this work?
-            // grid = new (declare([OnDemandGrid, Selection, ColumnHider]))({
-            //     selectionMode: 'single',
-            //     columns: columns
-            // }, "grid");
+        //     grid = new(declare([OnDemandGrid, Selection, ColumnHider]))({
+        //     columns: columns
+        //   }, "gridDiv");
 
             // grid.on("dgrid-select", selectFeatureFromGrid);
         
-            dataStore.objectStore.data = [
+            // dataStore.objectStore.data = [
+            //     {"OBJECTID": 0, "A": 1, "B": 2, "C": 3},
+            //     {"OBJECTID": 1, "A": 5, "B": 6, "C": 7}];
+            dataStore.setData([
                 {"OBJECTID": 0, "A": 1, "B": 2, "C": 3},
-                {"OBJECTID": 1, "A": 5, "B": 6, "C": 7}];
-            grid.set("collection", dataStore);
+                {"OBJECTID": 1, "A": 5, "B": 6, "C": 7}]);
+
+            // grid.set("collection", dataStore);
+            grid.set("collection", dataStore.filter({OBJECTID: 1}));
 
             // gridDiv.style.display = 'block';
 
@@ -155,12 +180,18 @@
 
 
         function initGrid() {
-            var columns = {
-                first: 'First Name',
-                last: 'Last Name',
-                age: 'Age'
-            };
-            grid = new Grid({
+            // var columns = {
+            //     first: 'First Name',
+            //     last: 'Last Name',
+            //     age: 'Age'
+            // };
+            var columns = [
+                {field: "OBJECTID", label: "OBJECTID", sortable: true, hidden: true},
+                {field: "first", label: "First Name", sortable: true, hidden: false},
+                {field: "last", label: "Last Name", sortable: true, hidden: false},
+                {field: "age", label: "Age", sortable: true, hidden: false}
+            ]
+            grid = new SelectionGrid({
                 columns: columns    
             }, 'gridDiv');
             var data = [
@@ -187,16 +218,23 @@
 
         function updateGrid() {
             console.log('inside updateGrid...');
-            var columns = {
-                one: 'One',
-                two: 'Two',
-                three: 'Three',
-                four: 'Four'
-            };
+            // var columns = {
+            //     one: 'One',
+            //     two: 'Two',
+            //     three: 'Three',
+            //     four: 'Four'
+            // };
+            var columns = [
+                {field: "one", label: "One", sortable: true},
+                {field: "two", label: "Two", sortable: true},
+                {field: "three", label: "Three", sortable: true},
+                {field: "four", label: "Four", sortable: true}
+            ]
+            grid._setColumns(columns);
+
             grid.refresh();
-            // necessary?
-            grid.destroy();
-            grid = new Grid({
+        
+            grid = new SelectionGrid({
                 columns: columns    
             }, 'gridDiv');
 
@@ -210,6 +248,7 @@
 
         function resetGrid() {
             console.log('inside resetGrid...');
+            // only clears data. Previous column definitions remain including hidden columns
             grid.refresh();
         }
 

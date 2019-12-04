@@ -494,6 +494,7 @@ require([
         showSpinner();
         // e.g. https://www.ncdc.noaa.gov/swdiws/csv/nx3structure/20190601?tile=-105.117,39.678
         var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + date;
+        console.log(url+'?tile='+geolocation);
         // console.log("retrieving data for " + dataset + " on " + day, url);
 
         // updateDownloadLinks(dataset, date, geolocation);
@@ -505,7 +506,7 @@ require([
             responseType: "json"
         }).then(function (response) {
             var dailyData = response.data;
-            // console.log(dailyData.result);
+            console.log(dailyData.result);
 
             displayMessage(dailyData.result.length + ' events retrieved.');
 

@@ -1,4 +1,10 @@
 require([
+    "dojo/_base/declare",
+    "dgrid/Grid",
+    "dgrid/OnDemandGrid",
+    "dgrid/extensions/ColumnHider",
+    "dgrid/Selection",
+    "dstore/Memory",
     "dojo/on",
     "dojo/dom",
     "esri/Graphic",
@@ -9,15 +15,15 @@ require([
     "esri/widgets/Home",
     "esri/widgets/Search",
     "esri/geometry/support/webMercatorUtils",
-    "dgrid/OnDemandGrid",
-    "dgrid/extensions/ColumnHider",
-    "dojo/store/Memory",
-    "dstore/legacy/StoreAdapter",
-    "dgrid/Selection",
-    "dgrid/Grid",
     "app/globals",
     "dojo/domReady!"
 ], function (
+    declare,
+    Grid,
+    OnDemandGrid,
+    ColumnHider,
+    Selection,
+    Memory,
     on, 
     dom, 
     Graphic, 
@@ -28,23 +34,18 @@ require([
     Home, 
     Search, 
     webMercatorUtils, 
-    OnDemandGrid,
-    ColumnHider,
-    Memory,
-    StoreAdapter,
-    Selection,
-    Grid,
     myglobals
     ) {
     populateYearSelect();
 
-    console.log('myglobals', myglobals);
-    console.log(myglobals.getName());
+    // console.log('myglobals', myglobals);
+    // console.log(myglobals.getName());
     
     const CONUS_CENTROID = [-98.5795, 39.8283];
     const gridDiv = document.getElementById("grid");
 
-    
+    var CustomGrid = declare([Grid, Selection, ColumnHider]);
+
     // WARNING: global variable
     var geolocation = null;
     var selectedDay = null;
@@ -106,13 +107,6 @@ require([
     state.update();
     console.log(state);
 
-    // create a new datastore for the on demandgrid
-    // will be used to display attributes of selected features
-    let dataStore = new StoreAdapter({
-        objectStore: new Memory({
-            idProperty: "__OBJECTID"
-        })
-    });
     var grid = null;
 
 
@@ -258,7 +252,7 @@ require([
 
         // fields common to all datasets
         var columns = [
-            {field: '__OBJECTID', label: '__OBJECTID', sortable: true, hidden: true},
+            {field: 'OBJECTID', label: 'OBJECTID', sortable: true, hidden: true },
             {field: 'ZTIME', label: 'Time', sortable: true},
             {field: 'WSR_ID', label: 'WSR ID', sortable: true},
             {field: 'CELL_ID', label: 'Cell ID', sortable: true}
@@ -321,7 +315,14 @@ require([
         //   "grid"
         // );
 
-        grid = new Grid({
+        // hack to avoid "TypeError: Cannot read property 'element' of undefined"
+        if (grid) {
+            console.log('resetting columns');
+            grid._setColumns([]);
+            grid.refresh();
+        }
+
+        grid = new CustomGrid({
             columns: columns
         }, 'grid');
 
@@ -485,6 +486,7 @@ require([
                 displayMessage("data retrieved - found " + stats.totalEvents + " events across " + stats.numberOfDays + " days.");
             } else {
                 displayMessage("no data found for " + dataset + ' in '+ startYear);
+                hideGrid();
                 return;
             }
 
@@ -502,6 +504,7 @@ require([
                 // no data for this tile, dataset, and date
                 hideDateSelect();
                 displayMessage("no data found for " + dataset + ' on '+ selectedDay);
+                hideGrid();
             }
         
         },
@@ -629,6 +632,9 @@ require([
         clearDateSelect();
         displayMessage(welcomeMessage);
         selectedDay = null;
+
+        grid.refresh();
+        hideGrid();
     }
 
 
@@ -681,25 +687,16 @@ require([
             responseType: "json"
         }).then(function (response) {
             console.log(response.data.result);
+            
             var dailyData = response.data.result.map(function(event, i) {
-                // console.log('before', event);
-                event['__OBJECTID'] = i;
-                // console.log('after', event);
+                event['OBJECTID'] = i;
                 return(event);
             });
-            // console.log("dailyData", dailyData);
-            // createGrid(dataset);
-            
-            // console.log(dataStore);
-            console.log(grid);
-            console.log(dailyData);
-            //dataStore.objectStore.data = dailyData;
-            console.log('setting collection...');
-            // grid.set("collection", dataStore);
+    
             grid.refresh();
             grid.renderArray(dailyData);
-            console.log("set collection", dataStore);
-
+            showGrid();
+            
             displayMessage(response.data.result.length + ' events retrieved.');
 
             var results = parseDailyResults(response.data.result, dataset)
@@ -1017,6 +1014,14 @@ function showSpinner() {
 function hideSpinner() {
     loadingDiv = document.getElementById('loadingDiv');
     loadingDiv.style.display = 'none';
+}
+
+function  showGrid() {
+    document.getElementById('grid').style.setProperty('display', 'block');
+}
+
+function hideGrid() {
+    document.getElementById('grid').style.setProperty('display', 'none');
 }
 
 

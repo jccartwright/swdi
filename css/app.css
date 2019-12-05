@@ -34,7 +34,7 @@ grid-area: map;
 
 .wrapper {
     display: grid;
-    grid-template-rows: 100px  300px auto 235px;
+    grid-template-rows: 100px  300px auto 335px;
     grid-template-areas:
         "header"
         "sidebar"
@@ -53,7 +53,7 @@ grid-area: map;
 @media only screen and (min-width: 544px)  {
 .wrapper {
     grid-template-columns: 320px auto;
-    grid-template-rows: 100px  auto 135px;
+    grid-template-rows: 100px  auto 235px;
     grid-template-areas:
     "header   header"
     "sidebar  map"
@@ -226,11 +226,11 @@ grid-area: map;
     font-size: 14px;
 } */
 
-.dgrid .dgrid-scroller {
+/* .dgrid .dgrid-scroller {
     position: relative;
     max-height: 100px;
     overflow: auto;
-}
+} */
 
 .dgrid-hider-menu-label {
     color: #112E51;
@@ -239,6 +239,10 @@ grid-area: map;
 .dgrid-hider-menu {
 }
 
+.dgrid-hider-toggle {
+    background-color: white;
+}
+
 #grid {
-    height: 100px;
+    height: 200px;
 }

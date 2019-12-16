@@ -60,9 +60,9 @@
         const updateGridBtn = document.getElementById("updateGridBtn");
         const resetGridBtn = document.getElementById("resetGridBtn");
 
-        updateDataBtn.addEventListener("click", updateData2);
-        updateGridBtn.addEventListener("click", updateGrid2);
-        resetGridBtn.addEventListener("click", resetGrid2);
+        updateDataBtn.addEventListener("click", updateData);
+        updateGridBtn.addEventListener("click", updateGrid);
+        resetGridBtn.addEventListener("click", resetGrid);
 
         var SelectionGrid = declare([Grid, Selection, ColumnHider]);
         var SelectionGrid2 = declare([OnDemandGrid, Selection, ColumnHider]);
@@ -85,7 +85,7 @@
             idProperty: "OBJECTID"
         });
 
-        initGrid2();
+        initGrid();
 
         function selectFeatureFromGrid(evt) {
             console.log('inside selectFeatureFromGrid...');
@@ -195,6 +195,12 @@
                 columns: columns    
             }, 'gridDiv');
             var data = [
+                { first: 'Bob', last: 'Barker', age: 89 },
+                { first: 'Vanna', last: 'White', age: 55 },
+                { first: 'Pat', last: 'Sajak', age: 65 },
+                { first: 'Bob', last: 'Barker', age: 89 },
+                { first: 'Vanna', last: 'White', age: 55 },
+                { first: 'Pat', last: 'Sajak', age: 65 },
                 { first: 'Bob', last: 'Barker', age: 89 },
                 { first: 'Vanna', last: 'White', age: 55 },
                 { first: 'Pat', last: 'Sajak', age: 65 }

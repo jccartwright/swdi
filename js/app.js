@@ -279,9 +279,30 @@ require([
                 break;
 
             case 'nx3mda':
+                    columns.push({field: 'STR_RANK', label: 'Strength Ranking', sortable: true});
+                    columns.push({field: 'MSI', label: 'MSI', sortable: true});
+                    columns.push({field: 'LL_DV', label: 'Low Level DV (knots)', sortable: true});
+                    columns.push({field: 'MOTION_KTS', label: 'Motion Speed (knots)', sortable: true});
+                    columns.push({field: 'MAX_RV_KTS', label: 'Max RV (knots)', sortable: true});
+                    columns.push({field: 'TVS', label: 'TVS (Y or N)', sortable: true});
+                    columns.push({field: 'LL_BASE', label: 'Base (kft)', sortable: true});
+                    columns.push({field: 'DEPTH_KFT', label: 'Depth (kft)', sortable: true});
+                    columns.push({field: 'MOTION_DEG', label: 'Motion Direction (deg)', sortable: true});
+                    columns.push({field: 'SCIT_ID', label: 'ID from SCIT algorithm (used in other NEXRAD products)', sortable: true});
+                    columns.push({field: 'DPTH_STMRL', label: 'STMRL (percent)', sortable: true});
+                    columns.push({field: 'MAX_RV_KFT', label: 'Max RV Height(kft)', sortable: true});
+                    columns.push({field: 'AZIMUTH', label: 'Azimuth (deg)', sortable: true});
+                    columns.push({field: 'LL_ROT_VEL', label: 'Low Level RV (knots)', sortable: true});
+                    columns.push({field: 'RANGE', label: 'Range (nautical mi)', sortable: true});
                 break;
+
             case 'nx3tvs':
-                break;  
+                    columns.push({field: 'RANGE', label: 'Range (nautical mi)', sortable: true});
+                    columns.push({field: 'AZIMUTH', label: 'Azimuth (deg)', sortable: true});
+                    columns.push({field: 'MAX_SHEAR', label: 'Max Shear (e-3/s', sortable: true});
+                    columns.push({field: 'MXDV', label: 'MXDV (knots)', sortable: true});
+                break;
+
             case 'plsr':
                 // have yet to find a response example
                 break;

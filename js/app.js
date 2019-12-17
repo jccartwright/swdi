@@ -707,7 +707,11 @@ require([
         },
         function(error){
             console.log('error in getting daily data', error);
-            displayMessage("Error retrieving data from server. Please try again later");
+            if (error.details.httpStatus == 400) {
+                displayMessage("Access to these data is restricted");
+            } else {
+                displayMessage("Error retrieving data from server. Please try again later");
+            }
             hideSpinner();
         });
     }

@@ -53,7 +53,6 @@ require([
     var domElements = {
         'downloadPanel': document.getElementById('downloadPanel'),
         'introPanel': document.getElementById('introPanel'),
-        'creditsPanel': document.getElementById('creditsPanel'),
         'dateSelect': document.getElementById('dateSelect'),
         'disclaimerPanel': document.getElementById('disclaimerPanel'),
         'datasetSelect': document.getElementById('datasetSelect'),
@@ -137,8 +136,8 @@ require([
     });
     on(dom.byId('disclaimerBtn'), 'click', toggleDisclaimerPanel);
     on(dom.byId('disclaimerPanel'), 'click', toggleDisclaimerPanel);
-    on(dom.byId('creditsBtn'), 'click', toggleCreditsPanel);
-    on(dom.byId('creditsPanel'), 'click', toggleCreditsPanel);
+    // on(dom.byId('creditsBtn'), 'click', toggleCreditsPanel);
+    // on(dom.byId('creditsPanel'), 'click', toggleCreditsPanel);
 
 
     // Create a symbol for rendering the tile boundary graphic
@@ -389,7 +388,7 @@ require([
         }
         document.getElementById('downloadPanel').style.display = 'none';
         document.getElementById('disclaimerPanel').style.display = 'none';
-        document.getElementById('creditsPanel').style.display = 'none';
+        // document.getElementById('creditsPanel').style.display = 'none';
     }
 
 
@@ -402,7 +401,7 @@ require([
         }    
         document.getElementById('introPanel').style.display = 'none';
         document.getElementById('disclaimerPanel').style.display = 'none';
-        document.getElementById('creditsPanel').style.display = 'none';
+        // document.getElementById('creditsPanel').style.display = 'none';
     }
 
 
@@ -415,21 +414,21 @@ require([
         }
         document.getElementById('downloadPanel').style.display = 'none';
         document.getElementById('introPanel').style.display = 'none';
-        document.getElementById('creditsPanel').style.display = 'none';
+        // document.getElementById('creditsPanel').style.display = 'none';
     }
 
 
-    function toggleCreditsPanel() {
-        var panel = document.getElementById('creditsPanel');
-        if (panel.style.display == 'none') {
-            panel.style.display = 'inline-block';
-        } else {
-            panel.style.display = 'none';
-        }
-        document.getElementById('downloadPanel').style.display = 'none';
-        document.getElementById('introPanel').style.display = 'none';
-        document.getElementById('disclaimerPanel').style.display = 'none';
-    }
+    // function toggleCreditsPanel() {
+    //     var panel = document.getElementById('creditsPanel');
+    //     if (panel.style.display == 'none') {
+    //         panel.style.display = 'inline-block';
+    //     } else {
+    //         panel.style.display = 'none';
+    //     }
+    //     document.getElementById('downloadPanel').style.display = 'none';
+    //     document.getElementById('introPanel').style.display = 'none';
+    //     document.getElementById('disclaimerPanel').style.display = 'none';
+    // }
 
 
     function mapClickHandler(event) {

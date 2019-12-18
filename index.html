@@ -19,6 +19,17 @@
 
     <!-- <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8=" crossorigin="anonymous"></script> -->
     <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script> -->
+    <script>
+        var locationPath = location.pathname.replace(/\/[^\/]+$/, "");
+        window.dojoConfig = {
+            packages: [
+            {
+                name: "app",
+                location: locationPath + "js/app"
+            }
+            ]
+        };
+    </script>
     <script src="https://js.arcgis.com/4.12/"></script>
     <script src="js/app.js"></script>
 </head>
@@ -37,7 +48,7 @@
                 <button id="wsBtn" class="btn btn-primary btn-xs" type="submit">Web Services</button>
                 <button id="downloadBtn" class="btn btn-primary btn-xs" type="submit">Bulk Download</button>
                 <button id="disclaimerBtn" class="btn btn-primary btn-xs" type="submit">Disclaimer</button>
-                <button id="creditsBtn" class="btn btn-primary btn-xs" type="submit">Credits</button>
+                <!-- <button id="creditsBtn" class="btn btn-primary btn-xs" type="submit">Credits</button> -->
             </nav>
           </div>
         </div>
@@ -145,6 +156,11 @@
         <div class="map" id="viewDiv"></div>
 
         <div class="box footer" id="footerDiv">
+            <div id="gridDisplay">
+                <!-- <span class="info" id="featureCount">feature count</span> -->
+                <div id="grid" ></div>
+            </div>
+            <!-- <div style="height:100px; background-color:red;">table goes here</div> -->
                 <table class="footer" align="center">
                         <tr valign="middle" align="center">
                           <td>
@@ -170,7 +186,14 @@
     <div id="tooltip" role="tooltip" style="display:none;"></div>
 
     <div id="introPanel" style="display: none">
-        The Severe Weather Data Inventory (SWDI) is an integrated database of severe weather records for the United States. The records in SWDI come from a variety of sources in the NCDC archive. SWDI provides the ability to search through all of these data to find records covering a particular time period and geographic region, and to download the results of your search in a variety of formats. The formats currently supported are Shapefile (for GIS), KMZ (for Google Earth), CSV (comma-separated), and XML.
+        The Severe Weather Data Inventory (SWDI) is an integrated database of 
+        severe weather records for the United States. The records in SWDI come 
+        from a variety of sources in the NCEI archive. SWDI provides the 
+        ability to search through all of these data to find records covering a 
+        particular time period and geographic region, and to download the 
+        results of your search in a variety of formats. The formats currently 
+        supported are Shapefile (for GIS), KMZ (for Google Earth), CSV 
+        (comma-separated), JSON, and XML.
     </div>
 
     <div id="downloadPanel" style="display: none">

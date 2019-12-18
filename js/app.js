@@ -1,4 +1,10 @@
 require([
+    "dojo/_base/declare",
+    "dgrid/Grid",
+    "dgrid/OnDemandGrid",
+    "dgrid/extensions/ColumnHider",
+    "dgrid/Selection",
+    "dstore/Memory",
     "dojo/on",
     "dojo/dom",
     "esri/Graphic",
@@ -8,9 +14,37 @@ require([
     "esri/request",
     "esri/widgets/Home",
     "esri/widgets/Search",
-    "esri/geometry/support/webMercatorUtils"
-], function (on, dom, Graphic, GraphicsLayer, Map, MapView, esriRequest, Home, Search, webMercatorUtils) {
+    "esri/geometry/support/webMercatorUtils",
+    "app/globals",
+    "dojo/domReady!"
+], function (
+    declare,
+    Grid,
+    OnDemandGrid,
+    ColumnHider,
+    Selection,
+    Memory,
+    on, 
+    dom, 
+    Graphic, 
+    GraphicsLayer, 
+    Map, 
+    MapView, 
+    esriRequest, 
+    Home, 
+    Search, 
+    webMercatorUtils, 
+    myglobals
+    ) {
+    populateYearSelect();
+
+    // console.log('myglobals', myglobals);
+    // console.log(myglobals.getName());
+    
     const CONUS_CENTROID = [-98.5795, 39.8283];
+    const gridDiv = document.getElementById("grid");
+
+    var CustomGrid = declare([Grid, Selection, ColumnHider]);
 
     // WARNING: global variable
     var geolocation = null;
@@ -19,12 +53,61 @@ require([
     var domElements = {
         'downloadPanel': document.getElementById('downloadPanel'),
         'introPanel': document.getElementById('introPanel'),
-        'creditsPanel': document.getElementById('creditsPanel'),
         'dateSelect': document.getElementById('dateSelect'),
         'disclaimerPanel': document.getElementById('disclaimerPanel'),
         'datasetSelect': document.getElementById('datasetSelect'),
-        'downloadFormats': document.getElementById('downloadFormats')
+        'downloadFormats': document.getElementById('downloadFormats'),
+        'yearSelect': document.getElementById('yearSelect')
     }
+    
+    var state = {
+        geolocation: null,
+        // the following two variables refer to the state of the dateSelect and not the calendar
+        previousDay: null,
+        currentDay: null,
+        year: null,
+        dataset: null,
+        
+        formatDate: function() {
+            // reformat day value into yyyymmdd
+            return (this.day.split('-').join(''));
+        },
+
+        update: function() {
+            var datasetSelect = domElements.datasetSelect;
+            this.dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
+    
+            var yearSelect = domElements.yearSelect;
+            this.year = parseInt(yearSelect.options[yearSelect.selectedIndex > 0 ? yearSelect.selectedIndex: 0].value);
+    
+            var dateSelect = domElements.dateSelect;
+            if (dateSelect.options.length) {
+                this.currentDay = dateSelect.options[dateSelect.selectedIndex ? dateSelect.selectedIndex: 0].value;
+            }    
+        }
+    }
+
+    // function updateState() {
+    //     console.log('inside updateState...');
+    //     var datasetSelect = domElements.datasetSelect;
+    //     state.dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
+
+    //     var yearSelect = domElements.yearSelect;
+    //     state.year = parseInt(yearSelect.options[yearSelect.selectedIndex > 0 ? yearSelect.selectedIndex: 0].value);
+
+    //     var dateSelect = domElements.dateSelect;
+    //     if (dateSelect.options.length) {
+    //         console.log(dateSelect);
+    //         state.currentDay = dateSelect.options[dateSelect.selectedIndex ? dateSelect.selectedIndex: 0].value;
+    //     }
+    // }
+
+    // debugging
+    state.update();
+    console.log(state);
+
+    var grid = null;
+
 
     // setup button handlers
     // var getDataButton = dom.byId('getDataButton');
@@ -38,7 +121,6 @@ require([
     // one style better than another?
     //dateSelect.addEventListener("change", dateChangeHandler);
 
-    // on(dom.byId('downloadDataBtn'), 'click', downloadDailyData);
     domElements.downloadFormats.addEventListener("change", downloadFormatChangeHandler);
 
 
@@ -54,8 +136,8 @@ require([
     });
     on(dom.byId('disclaimerBtn'), 'click', toggleDisclaimerPanel);
     on(dom.byId('disclaimerPanel'), 'click', toggleDisclaimerPanel);
-    on(dom.byId('creditsBtn'), 'click', toggleCreditsPanel);
-    on(dom.byId('creditsPanel'), 'click', toggleCreditsPanel);
+    // on(dom.byId('creditsBtn'), 'click', toggleCreditsPanel);
+    // on(dom.byId('creditsPanel'), 'click', toggleCreditsPanel);
 
 
     // Create a symbol for rendering the tile boundary graphic
@@ -163,6 +245,114 @@ require([
     //  
     // supporting functions
     //
+    function createGrid(datasetName) {
+        console.log('inside createGrid with ', datasetName);
+        // clearGrid();
+
+        // fields common to all datasets
+        var columns = [
+            {field: 'OBJECTID', label: 'OBJECTID', sortable: true, hidden: true },
+            {field: 'ZTIME', label: 'Time', sortable: true},
+            {field: 'WSR_ID', label: 'WSR ID', sortable: true},
+            {field: 'CELL_ID', label: 'Cell ID', sortable: true}
+        ]
+
+        // add fields unique to given dataset
+        switch (datasetName) {
+            case 'nx3structure':
+            case 'nx3structure_all':
+                columns.push({field: 'AZIMUTH', label: 'Azimuth', sortable: true});
+                columns.push({field: 'MAX_REFLECT', label: 'Max Reflect', sortable: true});
+                columns.push({field: 'RANGE', label: 'Range', sortable: true});
+                columns.push({field: 'VIL', label: 'VIL', sortable: true});
+                break;
+
+            case 'nx3hail':
+            case 'nx3hail_all':
+                columns.push({field: 'PROB', label: 'Probability', sortable: true});
+                columns.push({field: 'MAXSIZE', label: 'Max Size', sortable: true});
+                columns.push({field: 'SEVPROB', label: 'Severe Probability', sortable: true});
+                break;
+
+            case 'nx3meso':
+                // have yet to find a response example
+                break;
+
+            case 'nx3mda':
+                    columns.push({field: 'STR_RANK', label: 'Strength Ranking', sortable: true});
+                    columns.push({field: 'MSI', label: 'MSI', sortable: true});
+                    columns.push({field: 'LL_DV', label: 'Low Level DV (knots)', sortable: true});
+                    columns.push({field: 'MOTION_KTS', label: 'Motion Speed (knots)', sortable: true});
+                    columns.push({field: 'MAX_RV_KTS', label: 'Max RV (knots)', sortable: true});
+                    columns.push({field: 'TVS', label: 'TVS (Y or N)', sortable: true});
+                    columns.push({field: 'LL_BASE', label: 'Base (kft)', sortable: true});
+                    columns.push({field: 'DEPTH_KFT', label: 'Depth (kft)', sortable: true});
+                    columns.push({field: 'MOTION_DEG', label: 'Motion Direction (deg)', sortable: true});
+                    columns.push({field: 'SCIT_ID', label: 'ID from SCIT algorithm (used in other NEXRAD products)', sortable: true});
+                    columns.push({field: 'DPTH_STMRL', label: 'STMRL (percent)', sortable: true});
+                    columns.push({field: 'MAX_RV_KFT', label: 'Max RV Height(kft)', sortable: true});
+                    columns.push({field: 'AZIMUTH', label: 'Azimuth (deg)', sortable: true});
+                    columns.push({field: 'LL_ROT_VEL', label: 'Low Level RV (knots)', sortable: true});
+                    columns.push({field: 'RANGE', label: 'Range (nautical mi)', sortable: true});
+                break;
+
+            case 'nx3tvs':
+                    columns.push({field: 'RANGE', label: 'Range (nautical mi)', sortable: true});
+                    columns.push({field: 'AZIMUTH', label: 'Azimuth (deg)', sortable: true});
+                    columns.push({field: 'MAX_SHEAR', label: 'Max Shear (e-3/s', sortable: true});
+                    columns.push({field: 'MXDV', label: 'MXDV (knots)', sortable: true});
+                break;
+
+            case 'plsr':
+                // have yet to find a response example
+                break;
+
+            case 'nldn':
+                break;
+
+            default:
+            console.error('unrecognized dataset: ', dataset);
+        }
+
+
+        // var columns = [
+        //     {field: '__OBJECTID', label: '__OBJECTID', sortable: true, hidden: true},
+        //     {field: 'ZTIME', label: 'Time', sortable: true}
+        // ]
+        // create a new onDemandGrid with its selection and columnhider
+        // extensions. Set the columns of the grid to display attributes
+        // the hurricanes cvslayer
+        console.log('creating new grid with columns', columns);
+        // grid = null;
+        // grid = new(declare([OnDemandGrid, Selection, ColumnHider]))({
+        //     columns: columns
+        //   }, "grid")
+
+        // grid = new (OnDemandGrid.createSubclass([Selection, ColumnHider]))(
+        //   {
+        //     columns: columns
+        //   },
+        //   "grid"
+        // );
+
+        // hack to avoid "TypeError: Cannot read property 'element' of undefined"
+        if (grid) {
+            console.log('resetting columns');
+            grid._setColumns([]);
+            grid.refresh();
+        }
+
+        grid = new CustomGrid({
+            columns: columns
+        }, 'grid');
+
+        // add a row-click listener on the grid. This will be used
+        // to highlight the corresponding feature on the view
+        // grid.on("dgrid-select", selectFeatureFromGrid);
+        console.log('leaving createGrid...');
+      }
+
+
     function downloadFormatChangeHandler(evt) {
         // console.log('inside downloadFormatChangeHandler with ', evt);
         var format = evt.target.options[evt.target.selectedIndex].value;
@@ -210,24 +400,6 @@ require([
     }
 
 
-    function downloadDailyData() {
-        // console.log('inside downloadDailyData...');
-        var dateSelect = document.getElementById('dateSelect');
-
-        var day = dateSelect.options[dateSelect.selectedIndex].value;
-        // reformat day value into yyyymmdd
-        var date = day.split('-').join('');
-
-        var datasetSelect = document.getElementById('datasetSelect');
-        var dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
-
-        var url = 'https://www.ncdc.noaa.gov/swdiws/csv/' + dataset + '/' + date + '?tile=' + geolocation;
-        // console.log("retrieving data for " + dataset + " on " + day, url);
-
-        window.open(url);
-    }
-
-
     function toggleIntroPanel() {
         var panel = document.getElementById('introPanel');
         if (panel.style.display == 'none') {
@@ -237,7 +409,7 @@ require([
         }
         document.getElementById('downloadPanel').style.display = 'none';
         document.getElementById('disclaimerPanel').style.display = 'none';
-        document.getElementById('creditsPanel').style.display = 'none';
+        // document.getElementById('creditsPanel').style.display = 'none';
     }
 
 
@@ -250,7 +422,7 @@ require([
         }    
         document.getElementById('introPanel').style.display = 'none';
         document.getElementById('disclaimerPanel').style.display = 'none';
-        document.getElementById('creditsPanel').style.display = 'none';
+        // document.getElementById('creditsPanel').style.display = 'none';
     }
 
 
@@ -263,21 +435,21 @@ require([
         }
         document.getElementById('downloadPanel').style.display = 'none';
         document.getElementById('introPanel').style.display = 'none';
-        document.getElementById('creditsPanel').style.display = 'none';
+        // document.getElementById('creditsPanel').style.display = 'none';
     }
 
 
-    function toggleCreditsPanel() {
-        var panel = document.getElementById('creditsPanel');
-        if (panel.style.display == 'none') {
-            panel.style.display = 'inline-block';
-        } else {
-            panel.style.display = 'none';
-        }
-        document.getElementById('downloadPanel').style.display = 'none';
-        document.getElementById('introPanel').style.display = 'none';
-        document.getElementById('disclaimerPanel').style.display = 'none';
-    }
+    // function toggleCreditsPanel() {
+    //     var panel = document.getElementById('creditsPanel');
+    //     if (panel.style.display == 'none') {
+    //         panel.style.display = 'inline-block';
+    //     } else {
+    //         panel.style.display = 'none';
+    //     }
+    //     document.getElementById('downloadPanel').style.display = 'none';
+    //     document.getElementById('introPanel').style.display = 'none';
+    //     document.getElementById('disclaimerPanel').style.display = 'none';
+    // }
 
 
     function mapClickHandler(event) {
@@ -289,12 +461,19 @@ require([
     }
 
 
-    function getSummaryData(evt) {
-        // console.log('inside getSummaryData()...', evt);
+    function newTileOrDatasetSelected() {
+
+    }
+
+    function getSummaryData() {
+        console.log('inside getSummaryData()...');
         if (!geolocation) {
             alert("please select a geolocation");
             return;
         }
+
+        state.update();
+        console.log(state);
 
         // empty out Date select and points while waiting on new annual summary data
         clearDateSelect();
@@ -320,10 +499,14 @@ require([
             // console.log(summaryData);
             var stats = countSummaryData(summaryData.result);
             hideSpinner();
+
+            createGrid(dataset);
+            
             if (stats.totalEvents > 0) {
                 displayMessage("data retrieved - found " + stats.totalEvents + " events across " + stats.numberOfDays + " days.");
             } else {
                 displayMessage("no data found for " + dataset + ' in '+ startYear);
+                hideGrid();
                 return;
             }
 
@@ -341,8 +524,14 @@ require([
                 // no data for this tile, dataset, and date
                 hideDateSelect();
                 displayMessage("no data found for " + dataset + ' on '+ selectedDay);
+                hideGrid();
             }
         
+        },
+        function(error){
+            console.log('error in getting summary data', error);
+            displayMessage("Error retrieving data from server. Please try again later");
+            hideSpinner();
         });
     }
 
@@ -463,11 +652,17 @@ require([
         clearDateSelect();
         displayMessage(welcomeMessage);
         selectedDay = null;
+
+        grid.refresh();
+        hideGrid();
     }
 
 
-    function dateChangeHandler(evt) {
-        // console.log('inside dataChangeHandler: ', selectedDay);
+    function dateChangeHandler() {
+        console.log('inside dataChangeHandler: ');
+
+        state.update();
+        console.log(state);
 
         // var day = evt.target.options[evt.target.selectedIndex].value;
         var dateSelect = document.getElementById('dateSelect');
@@ -483,7 +678,16 @@ require([
     }
 
 
+    function clearGrid() {
+        if(grid){
+            dataStore.objectStore.data = {};
+            grid.set("collection", dataStore);
+        }
+    }
+
+
     function getDailyData(day) {
+        console.log('inside getDailyData with ', day);
         // reformat day value into yyyymmdd
         var date = day.split('-').join('');
 
@@ -497,43 +701,48 @@ require([
         console.log(url+'?tile='+geolocation);
         // console.log("retrieving data for " + dataset + " on " + day, url);
 
-        // updateDownloadLinks(dataset, date, geolocation);
-
         esriRequest(url, {
             query: {
                 tile: geolocation
             },
             responseType: "json"
         }).then(function (response) {
+<<<<<<< HEAD
             var dailyData = response.data;
             console.log(dailyData.result);
 
             displayMessage(dailyData.result.length + ' events retrieved.');
+=======
+            console.log(response.data.result);
+            
+            var dailyData = response.data.result.map(function(event, i) {
+                event['OBJECTID'] = i;
+                return(event);
+            });
+    
+            grid.refresh();
+            grid.renderArray(dailyData);
+            showGrid();
+            
+            displayMessage(response.data.result.length + ' events retrieved.');
+>>>>>>> 8bd28d650f37a32ebfa4a39b797580a3655dd13f
 
-            var results = parseDailyResults(dailyData.result, dataset)
+            var results = parseDailyResults(response.data.result, dataset)
 
+            console.log('results: ', results);
             drawPoints(results);
 
             hideSpinner();
+        },
+        function(error){
+            console.log('error in getting daily data', error);
+            if (error.details.httpStatus == 400) {
+                displayMessage("Access to these data is restricted");
+            } else {
+                displayMessage("Error retrieving data from server. Please try again later");
+            }
+            hideSpinner();
         });
-    }
-
-
-    function updateDownloadLinks(dataset, date, geolocation) {
-        var url = 'https://www.ncdc.noaa.gov/swdiws/csv/' + dataset + '/' + date + '?tile=' + geolocation; 
-        document.getElementById('csvDownloadLink').href = url;
-
-        url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + date + '?tile=' + geolocation; 
-        document.getElementById('jsonDownloadLink').href = url;
-
-        url = 'https://www.ncdc.noaa.gov/swdiws/kmz/' + dataset + '/' + date + '?tile=' + geolocation; 
-        document.getElementById('kmzDownloadLink').href = url;
-
-        url = 'https://www.ncdc.noaa.gov/swdiws/xml/' + dataset + '/' + date + '?tile=' + geolocation; 
-        document.getElementById('xmlDownloadLink').href = url;
-
-        url = 'https://www.ncdc.noaa.gov/swdiws/shp/' + dataset + '/' + date + '?tile=' + geolocation; 
-        document.getElementById('shpDownloadLink').href = url;
     }
 
 
@@ -787,6 +996,7 @@ require([
           };
         }
       }
+
 });
 
 
@@ -836,6 +1046,14 @@ function showSpinner() {
 function hideSpinner() {
     loadingDiv = document.getElementById('loadingDiv');
     loadingDiv.style.display = 'none';
+}
+
+function  showGrid() {
+    document.getElementById('grid').style.setProperty('display', 'block');
+}
+
+function hideGrid() {
+    document.getElementById('grid').style.setProperty('display', 'none');
 }
 
 

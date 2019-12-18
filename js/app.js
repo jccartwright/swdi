@@ -707,12 +707,6 @@ require([
             },
             responseType: "json"
         }).then(function (response) {
-<<<<<<< HEAD
-            var dailyData = response.data;
-            console.log(dailyData.result);
-
-            displayMessage(dailyData.result.length + ' events retrieved.');
-=======
             console.log(response.data.result);
             
             var dailyData = response.data.result.map(function(event, i) {
@@ -725,7 +719,6 @@ require([
             showGrid();
             
             displayMessage(response.data.result.length + ' events retrieved.');
->>>>>>> 8bd28d650f37a32ebfa4a39b797580a3655dd13f
 
             var results = parseDailyResults(response.data.result, dataset)
 

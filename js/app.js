@@ -116,7 +116,7 @@ require([
     on(resetButton, "click", reset);
     var dateSelect = dom.byId('dateSelect');
     on(dateSelect, "change", dateChangeHandler);
-    var dateSelect = dom.byId('datasetSelect');
+    var datasetSelect = dom.byId('datasetSelect');
     on(datasetSelect, "change", getSummaryData);
     // one style better than another?
     //dateSelect.addEventListener("change", dateChangeHandler);
@@ -489,6 +489,9 @@ require([
             return;
         }
 
+        // reset previously select day
+        selectedDay = null;
+        
         state.update();
         console.log(state);
 

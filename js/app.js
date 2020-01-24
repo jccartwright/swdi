@@ -490,8 +490,8 @@ require([
         }
 
         // reset previously select day
-        selectedDay = null;
-        
+        // selectedDay = null;
+
         state.update();
         console.log(state);
 
@@ -536,6 +536,8 @@ require([
             // default to the previously selected day, if any
             var dateSelect = document.getElementById('dateSelect');
             var inputGroup = document.getElementById('dateInputGroup');
+            console.log('selectedDay', selectedDay);
+            console.log('current selection: ',dateSelect.options[dateSelect.selectedIndex].value);
             if (! selectedDay || selectedDay === dateSelect.options[dateSelect.selectedIndex].value) {
                 // fire the handler to display the previously selected day or default to first in list
                 dateChangeHandler();

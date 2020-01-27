@@ -16,6 +16,7 @@ require([
     "esri/widgets/Search",
     "esri/geometry/support/webMercatorUtils",
     "app/globals",
+    "app/formatters",
     "dojo/domReady!"
 ], function (
     declare,
@@ -34,7 +35,8 @@ require([
     Home, 
     Search, 
     webMercatorUtils, 
-    myglobals
+    myglobals,
+    formatters
     ) {
     populateYearSelect();
 
@@ -42,13 +44,10 @@ require([
     // console.log(myglobals.getName());
     
     const CONUS_CENTROID = [-98.5795, 39.8283];
-    const gridDiv = document.getElementById("grid");
-
+    // const gridDiv = document.getElementById("grid");
     var CustomGrid = declare([Grid, Selection, ColumnHider]);
+    var grid = null;
 
-    // WARNING: global variable
-    var geolocation = null;
-    var selectedDay = null;
     // convenience to reduce noise in referencing DOM elements
     var domElements = {
         'downloadPanel': document.getElementById('downloadPanel'),
@@ -57,13 +56,15 @@ require([
         'disclaimerPanel': document.getElementById('disclaimerPanel'),
         'datasetSelect': document.getElementById('datasetSelect'),
         'downloadFormats': document.getElementById('downloadFormats'),
-        'yearSelect': document.getElementById('yearSelect')
+        'yearSelect': document.getElementById('yearSelect'),
+        'resetButton': document.getElementById('resetButton')
     }
+    // TODO test that every element in domElements is defined?
     
     var state = {
         geolocation: null,
         // the following two variables refer to the state of the dateSelect and not the calendar
-        previousDay: null,
+        selectedDay: null,
         currentDay: null,
         year: null,
         dataset: null,
@@ -73,7 +74,19 @@ require([
             return (this.day.split('-').join(''));
         },
 
+        getSelectValue: function(elementName) {
+            var elem = domElements[elementName]
+            if (elem && elem.options.length ) {
+                var optionIndex = elem.selectedIndex > 0 ? elem.selectedIndex: 0
+                return elem.options[optionIndex].value
+            } else {
+                console.error('invalid elementName provided: '+elementName+' or element has no Options')
+                return undefined
+            }
+        },
+
         update: function() {
+            this.dataset = this.getSelectValue('datasetSelect')
             var datasetSelect = domElements.datasetSelect;
             this.dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
     
@@ -87,45 +100,17 @@ require([
         }
     }
 
-    // function updateState() {
-    //     console.log('inside updateState...');
-    //     var datasetSelect = domElements.datasetSelect;
-    //     state.dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
-
-    //     var yearSelect = domElements.yearSelect;
-    //     state.year = parseInt(yearSelect.options[yearSelect.selectedIndex > 0 ? yearSelect.selectedIndex: 0].value);
-
-    //     var dateSelect = domElements.dateSelect;
-    //     if (dateSelect.options.length) {
-    //         console.log(dateSelect);
-    //         state.currentDay = dateSelect.options[dateSelect.selectedIndex ? dateSelect.selectedIndex: 0].value;
-    //     }
-    // }
 
     // debugging
     state.update();
     console.log(state);
 
-    var grid = null;
-
-
     // setup button handlers
-    // var getDataButton = dom.byId('getDataButton');
-    // on(getDataButton, "click", getSummaryData);
-    var resetButton = dom.byId('resetButton');
-    on(resetButton, "click", reset);
-    var dateSelect = dom.byId('dateSelect');
-    on(dateSelect, "change", dateChangeHandler);
-    var datasetSelect = dom.byId('datasetSelect');
-    on(datasetSelect, "change", getSummaryData);
-    // one style better than another?
-    //dateSelect.addEventListener("change", dateChangeHandler);
-
+    domElements.resetButton.addEventListener("click", resetButtonHandler);
     domElements.downloadFormats.addEventListener("change", downloadFormatChangeHandler);
-
-
-    var yearSelect = dom.byId('yearSelect');
-    on(yearSelect, 'change', getSummaryData);
+    domElements.dateSelect.addEventListener("change", dateChangeHandler);
+    domElements.datasetSelect.addEventListener("change", datasetChangeHandler);
+    domElements.yearSelect.addEventListener("change", yearChangeHandler);
 
     on(dom.byId('introBtn'), 'click', toggleIntroPanel);
     on(dom.byId('introPanel'), 'click', toggleIntroPanel);
@@ -136,30 +121,47 @@ require([
     });
     on(dom.byId('disclaimerBtn'), 'click', toggleDisclaimerPanel);
     on(dom.byId('disclaimerPanel'), 'click', toggleDisclaimerPanel);
-    // on(dom.byId('creditsBtn'), 'click', toggleCreditsPanel);
-    // on(dom.byId('creditsPanel'), 'click', toggleCreditsPanel);
 
 
-    // Create a symbol for rendering the tile boundary graphic
-    var fillSymbol = {
-        type: "simple-fill", // autocasts as new SimpleFillSymbol()
-        color: [205, 205, 205, 0.5],
-        outline: {
-            // autocasts as new SimpleLineSymbol()
-            color: [0, 0, 0],
-            width: 3
+    function datasetChangeHandler() {
+        console.log('inside datasetChangeHandler...');
+        updateTileSummary();
+    }
+
+
+    function yearChangeHandler() {
+        console.log('inside yearChangeHandler...');
+        state.selectedDay = null;
+
+        updateTileSummary();
+    }
+
+
+    function resetButtonHandler() {
+        console.log('inside resetButtonHandler...');
+        // TODO combine w/ reset()?
+        reset();
+    }
+
+
+    function dateChangeHandler() {
+        console.log('inside dateChangeHandler: ');
+
+        // format of YYYY-MM-DD
+        var day = state.getSelectValue('dateSelect');
+
+        // hang on to current date selection so if dataset is changed, we can try to immediately select that date        
+        state.selectedDay = day;
+        console.log('selectedDay: ', day);
+
+        // shouldn't be possible to see this select w/o year summary data
+        if (domElements.dateSelect.options.length == 0) {
+            alert('You must first retrieve data for the year');
+            return;
         }
-    };
 
-    var markerSymbol = {
-        type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
-        color: [0,0,255],
-        outline: {
-            // autocasts as new SimpleLineSymbol()
-            color: [0,0,0],
-            width: 1
-        }
-    };
+        getDailyData(day);
+    }
 
     // setup map and view
     var map = new Map({
@@ -331,30 +333,10 @@ require([
             console.error('unrecognized dataset: ', dataset);
         }
 
-
-        // var columns = [
-        //     {field: '__OBJECTID', label: '__OBJECTID', sortable: true, hidden: true},
-        //     {field: 'ZTIME', label: 'Time', sortable: true}
-        // ]
-        // create a new onDemandGrid with its selection and columnhider
-        // extensions. Set the columns of the grid to display attributes
-        // the hurricanes cvslayer
-        console.log('creating new grid with columns', columns);
-        // grid = null;
-        // grid = new(declare([OnDemandGrid, Selection, ColumnHider]))({
-        //     columns: columns
-        //   }, "grid")
-
-        // grid = new (OnDemandGrid.createSubclass([Selection, ColumnHider]))(
-        //   {
-        //     columns: columns
-        //   },
-        //   "grid"
-        // );
+        // console.log('creating new grid with columns', columns);
 
         // hack to avoid "TypeError: Cannot read property 'element' of undefined"
         if (grid) {
-            console.log('resetting columns');
             grid._setColumns([]);
             grid.refresh();
         }
@@ -366,7 +348,6 @@ require([
         // add a row-click listener on the grid. This will be used
         // to highlight the corresponding feature on the view
         // grid.on("dgrid-select", selectFeatureFromGrid);
-        console.log('leaving createGrid...');
       }
 
 
@@ -378,35 +359,31 @@ require([
             return;
         }
 
-        // global geolocation
+        var dataset = state.getSelectValue('datasetSelect');
+        var day = state.getSelectValue('dateSelect');
 
-        var datasetSelect = document.getElementById('datasetSelect');
-        var dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
-
-        var dateSelect = document.getElementById('dateSelect');
-        var day = dateSelect.options[dateSelect.selectedIndex].value;
         // reformat day value into yyyymmdd
         var date = day.split('-').join('');
 
         switch(format) {
             case 'csv':
-                var url = 'https://www.ncdc.noaa.gov/swdiws/csv/' + dataset + '/' + date + '?tile=' + geolocation; 
+                var url = 'https://www.ncdc.noaa.gov/swdiws/csv/' + dataset + '/' + date + '?tile=' + state.geolocation; 
                 break;
 
             case 'json':
-                url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + date + '?tile=' + geolocation; 
+                url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + date + '?tile=' + state.geolocation; 
                 break;
 
             case 'xml':
-                url = 'https://www.ncdc.noaa.gov/swdiws/xml/' + dataset + '/' + date + '?tile=' + geolocation; 
+                url = 'https://www.ncdc.noaa.gov/swdiws/xml/' + dataset + '/' + date + '?tile=' + state.geolocation; 
                 break;
 
             case 'kmz':
-                url = 'https://www.ncdc.noaa.gov/swdiws/kmz/' + dataset + '/' + date + '?tile=' + geolocation; 
+                url = 'https://www.ncdc.noaa.gov/swdiws/kmz/' + dataset + '/' + date + '?tile=' + state.geolocation; 
                 break;
 
             case 'shp':
-                url = 'https://www.ncdc.noaa.gov/swdiws/shp/' + dataset + '/' + date + '?tile=' + geolocation; 
+                url = 'https://www.ncdc.noaa.gov/swdiws/shp/' + dataset + '/' + date + '?tile=' + state.geolocation; 
                 break;
 
             default:
@@ -456,19 +433,6 @@ require([
     }
 
 
-    // function toggleCreditsPanel() {
-    //     var panel = document.getElementById('creditsPanel');
-    //     if (panel.style.display == 'none') {
-    //         panel.style.display = 'inline-block';
-    //     } else {
-    //         panel.style.display = 'none';
-    //     }
-    //     document.getElementById('downloadPanel').style.display = 'none';
-    //     document.getElementById('introPanel').style.display = 'none';
-    //     document.getElementById('disclaimerPanel').style.display = 'none';
-    // }
-
-
     function mapClickHandler(event) {
         // Get the coordinates of the click on the map view
         setGeolocation(event.mapPoint.longitude, event.mapPoint.latitude);
@@ -478,46 +442,34 @@ require([
     }
 
 
-    function newTileOrDatasetSelected() {
+    // when year or dataset changed, need to get a new annual summary and update UI elements
+    function updateTileSummary() {
+        console.log('inside updateTileSummary()...')
 
-    }
-
-    function getSummaryData() {
-        console.log('inside getSummaryData()...');
-        if (!geolocation) {
+        // must have a tile in order to get annual data.  Can happen if user changes year or dataset before selecting a tile.
+        if (!state.geolocation) {
             alert("please select a geolocation");
             return;
         }
 
-        // reset previously select day
-        // selectedDay = null;
-
-        state.update();
-        console.log(state);
-
-        // empty out Date select and points while waiting on new annual summary data
+        // reset UI while waiting on new annual summary data
         clearDateSelect();
         clearPoints();
 
-        // e.g. https://www.ncdc.noaa.gov/swdiws/csv/nx3structure/20190101:20200101?stat=tilesum:-105,40
-        var datasetSelect = document.getElementById('datasetSelect');
-        var dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
-        var yearSelect = document.getElementById('yearSelect');
-        var startYear = parseInt(yearSelect.options[yearSelect.selectedIndex].value);
-        var endYear = startYear + 1;
-        var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + startYear + '0101:' + endYear + '0101';
-        // console.log("retrieving summary data for " + dataset + ' in '+ startYear, url);
+        // format of "lon,lat"
+        var point = state.geolocation;
+        var dataset = state.getSelectValue('datasetSelect');
+        var startYear = parseInt(state.getSelectValue('yearSelect'));
+        
         displayMessage("retrieving summary data for " + dataset + ' in '+ startYear + ". Please standby...");
         showSpinner();
-        esriRequest(url, {
-            query: {
-                stat: "tilesum:" + geolocation
-            },
-            responseType: "json"
-        }).then(function (response) {
+        var summaryDataPromise = getSummaryData(point, dataset, startYear);
+
+        summaryDataPromise.then(function(response) {
             var summaryData = response.data;
-            // console.log(summaryData);
             var stats = countSummaryData(summaryData.result);
+            var selectedDayInResults = summaryData.result.map(x => x.DAY).includes(state.selectedDay);
+            
             hideSpinner();
 
             createGrid(dataset);
@@ -530,31 +482,44 @@ require([
                 return;
             }
 
-            // populate date select
-            addDateSelectOptions(summaryData.result);
+            // populate date select, defaulting to the previously selected day (if any)
+            addDateSelectOptions(summaryData.result, state.selectedDay);
 
-            // default to the previously selected day, if any
-            var dateSelect = document.getElementById('dateSelect');
-            var inputGroup = document.getElementById('dateInputGroup');
-            console.log('selectedDay', selectedDay);
-            console.log('current selection: ',dateSelect.options[dateSelect.selectedIndex].value);
-            if (! selectedDay || selectedDay === dateSelect.options[dateSelect.selectedIndex].value) {
-                // fire the handler to display the previously selected day or default to first in list
-                dateChangeHandler();
-    
+            // display data if this year/dataset contains a match for the previous day (if any)
+            var day = state.getSelectValue('dateSelect');
+            if (! state.selectedDay || selectedDayInResults) {
+                getDailyData(day);
             } else {
                 // no data for this tile, dataset, and date
                 hideDateSelect();
-                displayMessage("no data found for " + dataset + ' on '+ selectedDay);
+                displayMessage("no data found for " + dataset + ' on '+ state.selectedDay);
                 hideGrid();
             }
-        
-        },
-        function(error){
+        }, 
+        function(error) {
+            // promise failed, possibly due to web service unavailable
             console.log('error in getting summary data', error);
             displayMessage("Error retrieving data from server. Please try again later");
             hideSpinner();
         });
+    }
+
+
+    function getSummaryData(point, dataset, startYear) {
+        console.log('inside getSummaryData()...');
+
+        // always get 1 year's worth of data
+        var endYear = startYear + 1;
+
+        // e.g. https://www.ncdc.noaa.gov/swdiws/csv/nx3structure/20190101:20200101?stat=tilesum:-105,40
+        var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + startYear + '0101:' + endYear + '0101';
+        
+        return(esriRequest(url, {
+            query: {
+                stat: "tilesum:" + point
+            },
+            responseType: "json"
+        }));
     }
 
 
@@ -567,7 +532,9 @@ require([
     }
 
 
-    function addDateSelectOptions(results) {
+    // if there is a previously-selected date among the new Options, mark it as 'selected'
+    function addDateSelectOptions(results, selectedDay) {
+        console.log('inside addDateSelectOptions with ', selectedDay);
         var dateSelect = document.getElementById('dateSelect');
         var inputGroup = document.getElementById('dateInputGroup');
 
@@ -605,6 +572,7 @@ require([
         hideDateSelect();
         var dateSelect = document.getElementById('dateSelect');
     
+        // 
         var i;
         for (i = dateSelect.options.length - 1; i >= 0; i--) {
             dateSelect.remove(i);
@@ -616,10 +584,10 @@ require([
         var lat = Math.round(latitude * 1000) / 1000;
         var lon = Math.round(longitude * 1000) / 1000;
         addTileBoundary(lon, lat);
-        geolocation = lon + "," + lat;
-        //   document.getElementById('geolocationInput').value = geolocation;
-        displayMessage("coordinates " + geolocation + " selected.");
-        getSummaryData();
+        state.geolocation = lon + "," + lat;
+
+        displayMessage("coordinates " + state.geolocation + " selected.");
+        updateTileSummary();
     }
 
 
@@ -649,7 +617,7 @@ require([
                     [minx, maxy]]
                 ]
               },
-            symbol: fillSymbol
+            symbol: myglobals.getFillSymbol()
         });
 
         // remove any existing graphics
@@ -659,45 +627,25 @@ require([
 
         // re-center on grid
         view.goTo({ target: graphic.geometry.center, zoom: 12 });
-
-        // updateFilter(pointsLayer, graphic.geometry);
     }
 
 
     function reset() {
-        geolocation = null;
-        document.getElementById('datasetSelect').selectedIndex = 0;
+        state.geolocation = null;
+        domElements.datasetSelect.selectedIndex = 0;
 
         view.goTo({ target: CONUS_CENTROID, zoom: 3 });
         view.graphics.removeAll();
         clearPoints();
         clearDateSelect();
         displayMessage(welcomeMessage);
-        selectedDay = null;
+        state.selectedDay = null;
 
         grid.refresh();
         hideGrid();
     }
 
 
-    function dateChangeHandler() {
-        console.log('inside dataChangeHandler: ');
-
-        state.update();
-        console.log(state);
-
-        // var day = evt.target.options[evt.target.selectedIndex].value;
-        var dateSelect = document.getElementById('dateSelect');
-        // shouldn't be possible to see this select w/o year summary data
-        if (dateSelect.options.length == 0) {
-            alert('You must first retrieve data for the year');
-            return;
-        }
-        var day = dateSelect.options[dateSelect.selectedIndex].value;
-        selectedDay = day;
-
-        getDailyData(day);
-    }
 
 
     function clearGrid() {
@@ -708,28 +656,31 @@ require([
     }
 
 
+    // expects date in format of 'YYYY-MM-DD'
     function getDailyData(day) {
         console.log('inside getDailyData with ', day);
         // reformat day value into yyyymmdd
         var date = day.split('-').join('');
 
-        var datasetSelect = document.getElementById('datasetSelect');
-        var dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
+        var dataset = state.getSelectValue('datasetSelect');
 
         displayMessage("retrieving data for " + dataset + " on " + day + ". Please standby...");
+
         showSpinner();
+
         // e.g. https://www.ncdc.noaa.gov/swdiws/csv/nx3structure/20190601?tile=-105.117,39.678
         var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + date;
-        console.log(url+'?tile='+geolocation);
+
+        console.log(url+'?tile='+state.geolocation);
         // console.log("retrieving data for " + dataset + " on " + day, url);
 
         esriRequest(url, {
             query: {
-                tile: geolocation
+                tile: state.geolocation
             },
             responseType: "json"
         }).then(function (response) {
-            console.log(response.data.result);
+            // console.log(response.data.result);
             
             var dailyData = response.data.result.map(function(event, i) {
                 event['OBJECTID'] = i;
@@ -744,13 +695,14 @@ require([
 
             var results = parseDailyResults(response.data.result, dataset)
 
-            console.log('results: ', results);
+            // console.log('results: ', results);
             drawPoints(results);
 
             hideSpinner();
         },
         function(error){
             console.log('error in getting daily data', error);
+            // lightning data only available to government IPs
             if (error.details.httpStatus == 400) {
                 displayMessage("Access to these data is restricted");
             } else {
@@ -796,131 +748,7 @@ require([
     }
 
 
-    function extractCoordsFromWKT(wkt) {
-        // bit of a hack to pull lon, lat from WKT string. depends on format like: "POINT (-105.083963633382 39.8283363414173)"
-        var coords = wkt.substring(7, wkt.length - 1).split(' ');
-        // TODO standardize the precision of the coords
-        return(coords);
-    }
 
-
-    function parseNx3structure(results) {
-        /* 
-        e.g.
-            [
-            {"MAX_REFLECT":"46","SHAPE":"POINT (-105.087486400579 39.6700222024728)","VIL":"7","WSR_ID":"KPUX","CELL_ID":"P4","ZTIME":"2019-05-18T00:09:58Z","AZIMUTH":"330","RANGE":"84"}
-            ]
-        */
-        var parsedData = [];
-        results.forEach(function(result) {
-            var coords = extractCoordsFromWKT(result.SHAPE)
-            result.SHAPE = coords;
-            parsedData.push(result)
-       })
-
-       return({'events': parsedData, 'dataset':'nx3structure'});
-    }
-
-
-    function parseNx3hail(results) {
-        /* 
-        e.g.
-            [
-            {"PROB":"100","SHAPE":"POINT (-105.022116449117 39.6794851127902)","WSR_ID":"KPUX","CELL_ID":"U5","ZTIME":"2019-05-28T07:05:57Z","SEVPROB":"70","MAXSIZE":"1.25"}
-            ]
-        */
-        var parsedData = [];
-        results.forEach(function(result) {
-            var coords = extractCoordsFromWKT(result.SHAPE)
-            result.SHAPE = coords;
-            parsedData.push(result)
-       })
-
-       return({'events': parsedData, 'dataset':'nx3hail'});
-    }
-
-
-    function parseNldn(results) {
-        /* 
-        e.g.
-            [
-            {"MILLISECONDS":"130","DETECTOR_QUANTITY":"6","POLARITY":"N","STROKE_COUNT":"1","SDO_POINT_TYPE":"POINT (-105.076 39.663)","DATASOURCE":"A","STROKE_STRENGTH":"11.2","MESSAGE_TYPE":"FL","STROKE_TYPE":"CG","ZTIME":"2019-05-18T00:15:57Z"}
-            ]
-        */
-        var parsedData = [];
-        results.forEach(function(result){
-            var coords = extractCoordsFromWKT(result.SDO_POINT_TYPE)
-
-            // standardize the geometry field
-            delete result.SDO_POINT_TYPE
-            result.SHAPE = coords
-           
-           parsedData.push(result)
-       })
-
-       return({'events': parsedData, 'dataset': 'nldn'});
-    }
-
-
-    function parseNx3tvs(results) {
-        /* 
-        e.g.
-        [
-        {"CELL_TYPE":"TVS","SHAPE":"POINT (-105.001045144039 40.0443316122911)","MAX_SHEAR":"40","WSR_ID":"KDEN","MXDV":"73","CELL_ID":"Q0","ZTIME":"2018-07-05T21:50:29Z","AZIMUTH":"311","RANGE":"29"}
-        ]
-        */
-        var parsedData = [];
-        results.forEach(function(result){
-            var coords = extractCoordsFromWKT(result.SHAPE)
-            result.SHAPE = coords
-           
-           parsedData.push(result)
-       })
-
-       return({'events': parsedData, 'dataset': 'nx3tvs'});
-    }
-
-
-    function parseNx3mda(results) {
-        // console.log('inside parseNx3mda.', results);
-        /* 
-        e.g.
-            [
-            {"STR_RANK":"7","MSI":"3996","LL_DV":"82","MOTION_KTS":"-999","WSR_ID":"KDEN","CELL_ID":"795","MAX_RV_KTS":"49","TVS":"N","SHAPE":"POINT (-105.023470692909 39.9947802649673)","LL_BASE":"8","DEPTH_KFT":"12","MOTION_DEG":"-999","SCIT_ID":"H0","DPTH_STMRL":"0","ZTIME":"2018-05-13T01:09:31Z","MAX_RV_KFT":"17","AZIMUTH":"305","LL_ROT_VEL":"38","RANGE":"28"}
-            ]
-        */
-        var parsedData = [];
-        results.forEach(function(result){
-            var coords = extractCoordsFromWKT(result.SHAPE)
-
-            result.SHAPE = coords;
-            parsedData.push(result)           
-       })
-
-       return({'events': parsedData, 'dataset': 'nx3mda'});
-    }
-
-
-    var pointPopupTemplate = {
-        // autocasts as new PopupTemplate()
-        title: "{ztime}",
-        content: [
-            {
-                type: "fields",
-                fieldInfos: [
-                    {
-                        fieldName: "max_reflect"
-                    },
-                    {
-                        fieldName: "cell_id"
-                    },
-                    {
-                        fieldName: "wsr_id"
-                    }
-                ]
-            }
-        ]
-    };
 
 
     function drawPoints(results) {
@@ -941,7 +769,7 @@ require([
                     longitude: event.SHAPE[0],
                     latitude: event.SHAPE[1]
                 },
-                symbol: markerSymbol,
+                symbol: myglobals.getMarkerSymbol(),
                 attributes: event
             })
             );

@@ -16,7 +16,7 @@ require([
     "esri/widgets/Search",
     "esri/geometry/support/webMercatorUtils",
     "app/globals",
-    "app/formatters",
+    "app/DatasetParsers",
     "dojo/domReady!"
 ], function (
     declare,
@@ -36,7 +36,7 @@ require([
     Search, 
     webMercatorUtils, 
     myglobals,
-    formatters
+    DatasetParsers
     ) {
     populateYearSelect();
 
@@ -103,7 +103,7 @@ require([
 
     // debugging
     state.update();
-    console.log(state);
+    // console.log(state);
 
     // setup button handlers
     domElements.resetButton.addEventListener("click", resetButtonHandler);
@@ -125,6 +125,8 @@ require([
 
     function datasetChangeHandler() {
         console.log('inside datasetChangeHandler...');
+        updatePeriodOfRecord(state.getSelectValue('datasetSelect'));
+    
         updateTileSummary();
     }
 
@@ -242,6 +244,10 @@ require([
             setGeolocation(resultGraphic.geometry.longitude, resultGraphic.geometry.latitude);
         }
     });
+
+
+    // initialization
+    updatePeriodOfRecord(state.getSelectValue('datasetSelect'));
 
 
     //  
@@ -439,6 +445,49 @@ require([
 
         // match the zoom level used by Search widget
         view.goTo({ target: event.mapPoint, zoom: 12 }, { duration: 2000 })
+    }
+
+
+    // converts date like "20200101" to "2020-01-01"
+    function formatDate(input) {
+        if (input.length != 8) {
+            console.error('invalid date format: '+ input);
+            return('');
+        }
+
+        var year = input.substring(0,4);
+        var month = input.substring(4,6);
+        var day = input.substring(6,8);
+        return ( [year, month, day].join('-') );
+    }
+
+
+    function updatePeriodOfRecord(dataset) {
+        console.log('inside updatePeriodOfRecord... ');
+        var porDiv = document.getElementById('periodOfRecordDiv');
+
+        porDiv.innerHTML = 'Period of Record: ';
+
+        porPromise = getPeriodOfRecord(dataset);
+        porPromise.then(
+            function(response) {
+                dates = response.data.result[0]
+                porDiv.innerHTML = 'Period of Record: ' + formatDate(dates.BEGDATE) + ' to ' + formatDate(dates.ENDDATE);
+            },
+            function(error) {
+                porDiv.innerHTML = 'Period of Record: not currently available'
+                console.error('unable to retrieve Period of Record for '+dataset)
+            }
+        )
+    }
+
+
+    function getPeriodOfRecord(dataset) {
+        var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/periodOfRecord';
+        
+        return(esriRequest(url, {
+            responseType: "json"
+        }));
     }
 
 
@@ -641,8 +690,10 @@ require([
         displayMessage(welcomeMessage);
         state.selectedDay = null;
 
-        grid.refresh();
-        hideGrid();
+        if (grid) { 
+            grid.refresh(); 
+            hideGrid();
+        }
     }
 
 

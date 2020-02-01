@@ -34,7 +34,7 @@ grid-area: map;
 
 .wrapper {
     display: grid;
-    grid-template-rows: 100px  300px auto 335px;
+    grid-template-rows: 100px  280px 200px 335px;
     grid-template-areas:
         "header"
         "sidebar"
@@ -213,6 +213,10 @@ grid-area: map;
     left: 50%;
     top: 50%;
     display: none;
+}
+
+#periodOfRecordDiv {
+    font-size: small;
 }
 
 /* #info, #gridDisplay {

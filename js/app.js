@@ -725,6 +725,9 @@ require([
         console.log(url+'?tile='+state.geolocation);
         // console.log("retrieving data for " + dataset + " on " + day, url);
 
+        // remove point from the previous selection
+        clearPoints();
+
         esriRequest(url, {
             query: {
                 tile: state.geolocation
@@ -737,7 +740,7 @@ require([
                 event['OBJECTID'] = i;
                 return(event);
             });
-    
+
             grid.refresh();
             grid.renderArray(dailyData);
             showGrid();

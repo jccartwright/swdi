@@ -124,7 +124,7 @@ require([
 
 
     function datasetChangeHandler() {
-        console.log('inside datasetChangeHandler...');
+        // console.log('inside datasetChangeHandler...');
         updatePeriodOfRecord(state.getSelectValue('datasetSelect'));
     
         updateTileSummary();
@@ -132,7 +132,7 @@ require([
 
 
     function yearChangeHandler() {
-        console.log('inside yearChangeHandler...');
+        // console.log('inside yearChangeHandler...');
         state.selectedDay = null;
 
         updateTileSummary();
@@ -140,21 +140,21 @@ require([
 
 
     function resetButtonHandler() {
-        console.log('inside resetButtonHandler...');
+        // console.log('inside resetButtonHandler...');
         // TODO combine w/ reset()?
         reset();
     }
 
 
     function dateChangeHandler() {
-        console.log('inside dateChangeHandler: ');
+        // console.log('inside dateChangeHandler: ');
 
         // format of YYYY-MM-DD
         var day = state.getSelectValue('dateSelect');
 
         // hang on to current date selection so if dataset is changed, we can try to immediately select that date        
         state.selectedDay = day;
-        console.log('selectedDay: ', day);
+        // console.log('selectedDay: ', day);
 
         // shouldn't be possible to see this select w/o year summary data
         if (domElements.dateSelect.options.length == 0) {
@@ -254,7 +254,7 @@ require([
     // supporting functions
     //
     function createGrid(datasetName) {
-        console.log('inside createGrid with ', datasetName);
+        // console.log('inside createGrid with ', datasetName);
         // clearGrid();
 
         // fields common to all datasets
@@ -320,9 +320,9 @@ require([
                 columns.push({field: 'MXDV', label: 'MXDV (knots)', sortable: true});
                 break;
 
-            case 'plsr':
-                // have yet to find a response example
-                break;
+            // case 'plsr':
+            //     // have yet to find a response example
+            //     break;
 
             case 'nldn':
                 columns.push({field: 'DATASOURCE', label: 'Datasource', sortable: true});
@@ -463,7 +463,7 @@ require([
 
 
     function updatePeriodOfRecord(dataset) {
-        console.log('inside updatePeriodOfRecord... ');
+        // console.log('inside updatePeriodOfRecord... ');
         var porDiv = document.getElementById('periodOfRecordDiv');
 
         porDiv.innerHTML = 'Period of Record: ';
@@ -484,7 +484,7 @@ require([
 
     function getPeriodOfRecord(dataset) {
         var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/periodOfRecord';
-        
+        console.log(url);
         return(esriRequest(url, {
             responseType: "json"
         }));
@@ -493,7 +493,7 @@ require([
 
     // when year or dataset changed, need to get a new annual summary and update UI elements
     function updateTileSummary() {
-        console.log('inside updateTileSummary()...')
+        // console.log('inside updateTileSummary()...')
 
         // must have a tile in order to get annual data.  Can happen if user changes year or dataset before selecting a tile.
         if (!state.geolocation) {
@@ -555,7 +555,7 @@ require([
 
 
     function getSummaryData(point, dataset, startYear) {
-        console.log('inside getSummaryData()...');
+        // console.log('inside getSummaryData()...');
 
         // always get 1 year's worth of data
         var endYear = startYear + 1;
@@ -583,7 +583,7 @@ require([
 
     // if there is a previously-selected date among the new Options, mark it as 'selected'
     function addDateSelectOptions(results, selectedDay) {
-        console.log('inside addDateSelectOptions with ', selectedDay);
+        // console.log('inside addDateSelectOptions with ', selectedDay);
         var dateSelect = document.getElementById('dateSelect');
         var inputGroup = document.getElementById('dateInputGroup');
 
@@ -709,7 +709,7 @@ require([
 
     // expects date in format of 'YYYY-MM-DD'
     function getDailyData(day) {
-        console.log('inside getDailyData with ', day);
+        // console.log('inside getDailyData with ', day);
         // reformat day value into yyyymmdd
         var date = day.split('-').join('');
 
@@ -752,7 +752,7 @@ require([
             hideSpinner();
         },
         function(error){
-            console.log('error in getting daily data', error);
+            console.error('error in getting daily data', error);
             // lightning data only available to government IPs
             if (error.details.httpStatus == 400) {
                 displayMessage("Access to these data is restricted");
@@ -785,9 +785,9 @@ require([
             case 'nx3tvs':
                 return(parseNx3tvs(results));
 
-            case 'plsr':
-                // have yet to find a response example
-                break;
+            // case 'plsr':
+            //     // have yet to find a response example
+            //     break;
 
             case 'nldn':
                 return(parseNldn(results));
@@ -851,9 +851,9 @@ require([
             case 'nx3tvs':
                 return(`Time(UTC): ${att.ZTIME}<br>Radar ID: ${att.WSR_ID}<br>Cell Type: ${att.CELL_TYPE}<br>Max Shear:${att.MAX_SHEAR} E-3/s<br>MXDV: ${att.MXDV} kts<br>Azimuth: ${att.AZIMUTH}&deg;<br>Range: ${att.RANGE} nm<br>lat/lon: ${marker.geometry.latitude.toFixed(3)}, ${marker.geometry.longitude.toFixed(3)}`)
 
-            case 'plsr':
-                // TODO
-                break;
+            // case 'plsr':
+            //     // TODO
+            //     break;
 
             case 'nldn':
                 return(`Time(UTC): ${att.ZTIME}<br>Milliseconds: ${att.MILLISECONDS}<br>Detector Quantity: ${att.DETECTOR_QUANTITY}<br>Polarity:${att.POLARITY}<br>Stroke Strength: ${att.STROKE_STRENGTH}<br>Stroke Type: ${att.STROKE_TYPE}<br>Stroke Count: ${att.STROKE_COUNT}<br>lat/lon: ${marker.geometry.latitude.toFixed(3)}, ${marker.geometry.longitude.toFixed(3)}`)
@@ -872,7 +872,7 @@ require([
 
     // not currently used 
     function updateFilter(featureLayerView, filterGeometry) {
-        console.log('inside updateFilter with ', featureLayerView, filterGeometry);
+        // console.log('inside updateFilter with ', featureLayerView, filterGeometry);
 
         featureFilter = {
           // autocasts to FeatureFilter

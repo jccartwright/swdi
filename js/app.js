@@ -42,6 +42,8 @@ require([
 
     // console.log('myglobals', myglobals);
     // console.log(myglobals.getName());
+
+    var datasetParsers = new DatasetParsers();
     
     const CONUS_CENTROID = [-98.5795, 39.8283];
     // const gridDiv = document.getElementById("grid");
@@ -63,11 +65,8 @@ require([
     
     var state = {
         geolocation: null,
-        // the following two variables refer to the state of the dateSelect and not the calendar
+        // refers to the state of the dateSelect and not the calendar
         selectedDay: null,
-        currentDay: null,
-        year: null,
-        dataset: null,
         
         formatDate: function() {
             // reformat day value into yyyymmdd
@@ -83,27 +82,9 @@ require([
                 console.error('invalid elementName provided: '+elementName+' or element has no Options')
                 return undefined
             }
-        },
-
-        update: function() {
-            this.dataset = this.getSelectValue('datasetSelect')
-            var datasetSelect = domElements.datasetSelect;
-            this.dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
-    
-            var yearSelect = domElements.yearSelect;
-            this.year = parseInt(yearSelect.options[yearSelect.selectedIndex > 0 ? yearSelect.selectedIndex: 0].value);
-    
-            var dateSelect = domElements.dateSelect;
-            if (dateSelect.options.length) {
-                this.currentDay = dateSelect.options[dateSelect.selectedIndex ? dateSelect.selectedIndex: 0].value;
-            }    
         }
     }
 
-
-    // debugging
-    state.update();
-    // console.log(state);
 
     // setup button handlers
     domElements.resetButton.addEventListener("click", resetButtonHandler);
@@ -697,13 +678,16 @@ require([
     }
 
 
-
-
     function clearGrid() {
-        if(grid){
-            dataStore.objectStore.data = {};
-            grid.set("collection", dataStore);
+        if (grid) {
+            grid._setColumns([]);
+            grid.refresh();
         }
+        
+        // if(grid){
+        //     dataStore.objectStore.data = {};
+        //     grid.set("collection", dataStore);
+        // }
     }
 
 
@@ -716,6 +700,13 @@ require([
         var dataset = state.getSelectValue('datasetSelect');
 
         displayMessage("retrieving data for " + dataset + " on " + day + ". Please standby...");
+ 
+        // reset UI while waiting on new annual summary data
+        clearPoints();
+        if (grid) {
+            grid.refresh();
+        }
+        // clearGrid();
 
         showSpinner();
 
@@ -769,36 +760,34 @@ require([
         switch (dataset) {
             case 'nx3structure':
             case 'nx3structure_all':
-                return(parseNx3structure(results));
+                return(datasetParsers.parseNx3structure(results));
 
             case 'nx3hail':
             case 'nx3hail_all':
-                    return(parseNx3hail(results));
+                    return(datasetParsers.parseNx3hail(results));
 
             case 'nx3meso':
                 // have yet to find a response example
                 break;
 
             case 'nx3mda':
-                return(parseNx3mda(results));
+                return(datasetParsers.parseNx3mda(results));
 
             case 'nx3tvs':
-                return(parseNx3tvs(results));
+                return(datasetParsers.parseNx3tvs(results));
 
             case 'plsr':
                 // have yet to find a response example
                 break;
 
             case 'nldn':
-                return(parseNldn(results));
+                return(datasetParsers.parseNldn(results));
 
             default:
             console.error('unrecognized dataset: ', dataset);
             return;
         }
     }
-
-
 
 
 

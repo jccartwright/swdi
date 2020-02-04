@@ -238,88 +238,12 @@ require([
         console.log('inside createGrid with ', datasetName);
         // clearGrid();
 
-        // fields common to all datasets
-        var columns = [
-            {field: 'OBJECTID', label: 'OBJECTID', sortable: true, hidden: true },
-        ]
 
-        // add fields unique to given dataset
-        switch (datasetName) {
-            case 'nx3structure':
-            case 'nx3structure_all':
-                columns.push({field: 'ZTIME', label: 'Time', sortable: true});
-                columns.push({field: 'WSR_ID', label: 'WSR ID', sortable: true});
-                columns.push({field: 'CELL_ID', label: 'Cell ID', sortable: true});        
-                columns.push({field: 'AZIMUTH', label: 'Azimuth', sortable: true});
-                columns.push({field: 'MAX_REFLECT', label: 'Max Reflect', sortable: true});
-                columns.push({field: 'RANGE', label: 'Range', sortable: true});
-                columns.push({field: 'VIL', label: 'VIL', sortable: true});
-                break;
-
-            case 'nx3hail':
-            case 'nx3hail_all':
-                columns.push({field: 'ZTIME', label: 'Time', sortable: true});
-                columns.push({field: 'WSR_ID', label: 'WSR ID', sortable: true});
-                columns.push({field: 'CELL_ID', label: 'Cell ID', sortable: true});        
-                columns.push({field: 'PROB', label: 'Probability', sortable: true});
-                columns.push({field: 'MAXSIZE', label: 'Max Size', sortable: true});
-                columns.push({field: 'SEVPROB', label: 'Severe Probability', sortable: true});
-                break;
-
-            case 'nx3meso':
-                // have yet to find a response example
-                break;
-
-            case 'nx3mda':
-                columns.push({field: 'ZTIME', label: 'Time', sortable: true});
-                columns.push({field: 'WSR_ID', label: 'WSR ID', sortable: true});
-                columns.push({field: 'CELL_ID', label: 'Cell ID', sortable: true});        
-                columns.push({field: 'STR_RANK', label: 'Strength Ranking', sortable: true});
-                columns.push({field: 'MSI', label: 'MSI', sortable: true});
-                columns.push({field: 'LL_DV', label: 'Low Level DV (knots)', sortable: true});
-                columns.push({field: 'MOTION_KTS', label: 'Motion Speed (knots)', sortable: true});
-                columns.push({field: 'MAX_RV_KTS', label: 'Max RV (knots)', sortable: true});
-                columns.push({field: 'TVS', label: 'TVS (Y or N)', sortable: true});
-                columns.push({field: 'LL_BASE', label: 'Base (kft)', sortable: true});
-                columns.push({field: 'DEPTH_KFT', label: 'Depth (kft)', sortable: true});
-                columns.push({field: 'MOTION_DEG', label: 'Motion Direction (deg)', sortable: true});
-                columns.push({field: 'SCIT_ID', label: 'ID from SCIT algorithm (used in other NEXRAD products)', sortable: true});
-                columns.push({field: 'DPTH_STMRL', label: 'STMRL (percent)', sortable: true});
-                columns.push({field: 'MAX_RV_KFT', label: 'Max RV Height(kft)', sortable: true});
-                columns.push({field: 'AZIMUTH', label: 'Azimuth (deg)', sortable: true});
-                columns.push({field: 'LL_ROT_VEL', label: 'Low Level RV (knots)', sortable: true});
-                columns.push({field: 'RANGE', label: 'Range (nautical mi)', sortable: true});
-                break;
-
-            case 'nx3tvs':
-                columns.push({field: 'ZTIME', label: 'Time', sortable: true});
-                columns.push({field: 'WSR_ID', label: 'WSR ID', sortable: true});
-                columns.push({field: 'CELL_ID', label: 'Cell ID', sortable: true});        
-                columns.push({field: 'RANGE', label: 'Range (nautical mi)', sortable: true});
-                columns.push({field: 'AZIMUTH', label: 'Azimuth (deg)', sortable: true});
-                columns.push({field: 'MAX_SHEAR', label: 'Max Shear (e-3/s', sortable: true});
-                columns.push({field: 'MXDV', label: 'MXDV (knots)', sortable: true});
-                break;
-
-            case 'plsr':
-                // have yet to find a response example
-                break;
-
-            case 'nldn':
-                columns.push({field: 'DATASOURCE', label: 'Datasource', sortable: true});
-                columns.push({field: 'DETECTOR_QUANTITY', label: 'Detector Quantity', sortable: true});
-                columns.push({field: 'MESSAGE_TYPE', label: 'Message Type', sortable: true});
-                columns.push({field: 'MILLISECONDS', label: 'Milliseconds', sortable: true});
-                columns.push({field: 'POLARITY', label: 'Polarity', sortable: true});
-                columns.push({field: 'STROKE_COUNT', label: 'Stroke Count', sortable: true});
-                columns.push({field: 'STROKE_STRENGTH', label: 'Stroke Strength', sortable: true});
-                columns.push({field: 'STROKE_TYPE', label: 'Stroke Type', sortable: true});
-                break;
-
-            default:
-            console.error('unrecognized dataset: ', dataset);
+        var columns = myglobals.getColumns(datasetName);
+        if (! columns) {
+            console.error('unrecognized dataset: ', datasetName);
+            return;
         }
-
         // console.log('creating new grid with columns', columns);
 
         // hack to avoid "TypeError: Cannot read property 'element' of undefined"

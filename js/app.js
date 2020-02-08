@@ -17,6 +17,7 @@ require([
     "esri/geometry/support/webMercatorUtils",
     "app/globals",
     "app/DatasetParsers",
+    'dojo/_base/lang',
     "dojo/domReady!"
 ], function (
     declare,
@@ -35,13 +36,10 @@ require([
     Home, 
     Search, 
     webMercatorUtils, 
-    myglobals,
-    DatasetParsers
+    swdiGlobals,
+    DatasetParsers,
+    lang
     ) {
-    populateYearSelect();
-
-    // console.log('myglobals', myglobals);
-    // console.log(myglobals.getName());
 
     var datasetParsers = new DatasetParsers();
     
@@ -59,7 +57,8 @@ require([
         'datasetSelect': document.getElementById('datasetSelect'),
         'downloadFormats': document.getElementById('downloadFormats'),
         'yearSelect': document.getElementById('yearSelect'),
-        'resetButton': document.getElementById('resetButton')
+        'resetButton': document.getElementById('resetButton'),
+        'testButton': document.getElementById('testButton')
     }
     // TODO test that every element in domElements is defined?
     
@@ -85,27 +84,50 @@ require([
         }
     }
 
-
+    // initialization
+    populateYearSelect();
+    populateDatasetSelect();
+    displayMessage(swdiGlobals.getWelcomeMessage());
+    updatePeriodOfRecord(state.getSelectValue('datasetSelect'));
+    
     // setup button handlers
+    domElements.testButton.addEventListener("click", testButtonHandler);
     domElements.resetButton.addEventListener("click", resetButtonHandler);
     domElements.downloadFormats.addEventListener("change", downloadFormatChangeHandler);
     domElements.dateSelect.addEventListener("change", dateChangeHandler);
     domElements.datasetSelect.addEventListener("change", datasetChangeHandler);
     domElements.yearSelect.addEventListener("change", yearChangeHandler);
 
-    on(dom.byId('introBtn'), 'click', toggleIntroPanel);
-    on(dom.byId('introPanel'), 'click', toggleIntroPanel);
-    on(dom.byId('downloadBtn'), 'click', toggleDownloadPanel);
-    on(dom.byId('downloadPanel'), 'click', toggleDownloadPanel);
-    on(dom.byId('wsBtn'), 'click', function() {
+    document.getElementById('introBtn').addEventListener('click', toggleIntroPanel);
+    document.getElementById('introPanel').addEventListener('click', toggleIntroPanel);
+    document.getElementById('downloadBtn').addEventListener('click', toggleDownloadPanel);
+    document.getElementById('downloadPanel').addEventListener('click', toggleDownloadPanel);
+    document.getElementById('wsBtn').addEventListener('click', function() {
         window.open('https://www.ncdc.noaa.gov/swdiws');
     });
-    on(dom.byId('disclaimerBtn'), 'click', toggleDisclaimerPanel);
-    on(dom.byId('disclaimerPanel'), 'click', toggleDisclaimerPanel);
+    document.getElementById('disclaimerBtn').addEventListener('click', toggleDisclaimerPanel);
+    document.getElementById('disclaimerPanel').addEventListener('click', toggleDisclaimerPanel);
+    document.getElementById('disclaimerBtn').addEventListener('click', toggleDisclaimerPanel);
+    document.getElementById('datasetHelpPanel').addEventListener('click', toggleDatasetHelpPanel);
+    document.getElementById('datasetHelpBtn').addEventListener('click', toggleDatasetHelpPanel);
+    document.getElementById('datasetHelpCloseBtn').addEventListener('click', hideDatasetHelp);
+
+
+    function testButtonHandler() {
+        console.log('inside testButtonHandler...');
+        datasetParsers.myMethod();
+        
+        testAction();
+    }
+
+
+    function testAction() {
+        console.log('inside testAction...');
+    }
 
 
     function datasetChangeHandler() {
-        console.log('inside datasetChangeHandler...');
+        // console.log('inside datasetChangeHandler...');
         updatePeriodOfRecord(state.getSelectValue('datasetSelect'));
     
         updateTileSummary();
@@ -113,7 +135,7 @@ require([
 
 
     function yearChangeHandler() {
-        console.log('inside yearChangeHandler...');
+        // console.log('inside yearChangeHandler...');
         state.selectedDay = null;
 
         updateTileSummary();
@@ -121,21 +143,21 @@ require([
 
 
     function resetButtonHandler() {
-        console.log('inside resetButtonHandler...');
+        // console.log('inside resetButtonHandler...');
         // TODO combine w/ reset()?
         reset();
     }
 
 
     function dateChangeHandler() {
-        console.log('inside dateChangeHandler: ');
+        // console.log('inside dateChangeHandler: ');
 
         // format of YYYY-MM-DD
         var day = state.getSelectValue('dateSelect');
 
         // hang on to current date selection so if dataset is changed, we can try to immediately select that date        
         state.selectedDay = day;
-        console.log('selectedDay: ', day);
+        // console.log('selectedDay: ', day);
 
         // shouldn't be possible to see this select w/o year summary data
         if (domElements.dateSelect.options.length == 0) {
@@ -227,19 +249,15 @@ require([
     });
 
 
-    // initialization
-    updatePeriodOfRecord(state.getSelectValue('datasetSelect'));
-
-
     //  
     // supporting functions
     //
     function createGrid(datasetName) {
-        console.log('inside createGrid with ', datasetName);
+        // console.log('inside createGrid with ', datasetName);
         // clearGrid();
 
 
-        var columns = myglobals.getColumns(datasetName);
+        var columns = swdiGlobals.getColumns(datasetName);
         if (! columns) {
             console.error('unrecognized dataset: ', datasetName);
             return;
@@ -314,6 +332,7 @@ require([
         }
         document.getElementById('downloadPanel').style.display = 'none';
         document.getElementById('disclaimerPanel').style.display = 'none';
+        document.getElementById('datasetHelpPanel').style.display = 'none';
         // document.getElementById('creditsPanel').style.display = 'none';
     }
 
@@ -327,6 +346,7 @@ require([
         }    
         document.getElementById('introPanel').style.display = 'none';
         document.getElementById('disclaimerPanel').style.display = 'none';
+        document.getElementById('datasetHelpPanel').style.display = 'none';
         // document.getElementById('creditsPanel').style.display = 'none';
     }
 
@@ -340,9 +360,23 @@ require([
         }
         document.getElementById('downloadPanel').style.display = 'none';
         document.getElementById('introPanel').style.display = 'none';
+        document.getElementById('datasetHelpPanel').style.display = 'none';
         // document.getElementById('creditsPanel').style.display = 'none';
     }
 
+
+    function toggleDatasetHelpPanel() {
+        var panel = document.getElementById('datasetHelpPanel');
+        if (panel.style.display == 'none') {
+            panel.style.display = 'inline-block';
+        } else {
+            panel.style.display = 'none';
+        }
+        document.getElementById('downloadPanel').style.display = 'none';
+        document.getElementById('introPanel').style.display = 'none';
+        document.getElementById('disclaimerPanel').style.display = 'none';
+        // document.getElementById('creditsPanel').style.display = 'none';
+    }
 
     function mapClickHandler(event) {
         // Get the coordinates of the click on the map view
@@ -368,7 +402,7 @@ require([
 
 
     function updatePeriodOfRecord(dataset) {
-        console.log('inside updatePeriodOfRecord... ');
+        // console.log('inside updatePeriodOfRecord... ');
         var porDiv = document.getElementById('periodOfRecordDiv');
 
         porDiv.innerHTML = 'Period of Record: ';
@@ -398,7 +432,7 @@ require([
 
     // when year or dataset changed, need to get a new annual summary and update UI elements
     function updateTileSummary() {
-        console.log('inside updateTileSummary()...')
+        // console.log('inside updateTileSummary()...')
 
         // must have a tile in order to get annual data.  Can happen if user changes year or dataset before selecting a tile.
         if (!state.geolocation) {
@@ -415,7 +449,7 @@ require([
         var dataset = state.getSelectValue('datasetSelect');
         var startYear = parseInt(state.getSelectValue('yearSelect'));
         
-        displayMessage("retrieving summary data for " + dataset + ' in '+ startYear + ". Please standby...");
+        displayMessage("retrieving summary data for " + swdiGlobals.getDatasetLabel(dataset) + ' in '+ startYear + ". Please standby...");
         showSpinner();
         var summaryDataPromise = getSummaryData(point, dataset, startYear);
 
@@ -431,7 +465,7 @@ require([
             if (stats.totalEvents > 0) {
                 displayMessage("data retrieved - found " + stats.totalEvents + " events across " + stats.numberOfDays + " days.");
             } else {
-                displayMessage("no data found for " + dataset + ' in '+ startYear);
+                displayMessage("no data found for " + swdiGlobals.getDatasetLabel(dataset) + ' in '+ startYear);
                 hideGrid();
                 return;
             }
@@ -452,7 +486,7 @@ require([
         }, 
         function(error) {
             // promise failed, possibly due to web service unavailable
-            console.log('error in getting summary data', error);
+            console.error('error in getting summary data', error);
             displayMessage("Error retrieving data from server. Please try again later");
             hideSpinner();
         });
@@ -460,13 +494,14 @@ require([
 
 
     function getSummaryData(point, dataset, startYear) {
-        console.log('inside getSummaryData()...');
+        // console.log('inside getSummaryData()...');
 
         // always get 1 year's worth of data
         var endYear = startYear + 1;
 
         // e.g. https://www.ncdc.noaa.gov/swdiws/csv/nx3structure/20190101:20200101?stat=tilesum:-105,40
         var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + startYear + '0101:' + endYear + '0101';
+        console.log(url);
         
         return(esriRequest(url, {
             query: {
@@ -488,7 +523,7 @@ require([
 
     // if there is a previously-selected date among the new Options, mark it as 'selected'
     function addDateSelectOptions(results, selectedDay) {
-        console.log('inside addDateSelectOptions with ', selectedDay);
+        // console.log('inside addDateSelectOptions with ', selectedDay);
         var dateSelect = document.getElementById('dateSelect');
         var inputGroup = document.getElementById('dateInputGroup');
 
@@ -571,7 +606,7 @@ require([
                     [minx, maxy]]
                 ]
               },
-            symbol: myglobals.getFillSymbol()
+            symbol: swdiGlobals.getFillSymbol()
         });
 
         // remove any existing graphics
@@ -587,7 +622,9 @@ require([
     function reset() {
         state.geolocation = null;
         domElements.datasetSelect.selectedIndex = 0;
+        domElements.yearSelect.selectedIndex = 0;
 
+        searchWidget.clear();
         view.goTo({ target: CONUS_CENTROID, zoom: 3 });
         view.graphics.removeAll();
         clearPoints();
@@ -599,8 +636,32 @@ require([
             grid.refresh(); 
             hideGrid();
         }
+
+        //hideSpinner();
     }
 
+
+    function showSpinner() {
+        // console.log('inside showSpinner...');
+        loadingDiv = document.getElementById('loadingDiv');
+        loadingDiv.style.display = 'inline-block';
+        lockControls(true);
+    }
+    
+    function hideSpinner() {
+        loadingDiv = document.getElementById('loadingDiv');
+        loadingDiv.style.display = 'none';
+        lockControls(false);
+    }
+    
+    
+    function lockControls(disabled) {
+        // console.log('inside lockControls with ', disabled);
+        ['yearSelect', 'datasetSelect', 'dateSelect', 'downloadFormats', 'resetButton'].forEach(function(elemName){
+            document.getElementById(elemName).disabled = disabled;
+        });
+    }
+    
 
     function clearGrid() {
         if (grid) {
@@ -617,13 +678,13 @@ require([
 
     // expects date in format of 'YYYY-MM-DD'
     function getDailyData(day) {
-        console.log('inside getDailyData with ', day);
+        // console.log('inside getDailyData with ', day);
         // reformat day value into yyyymmdd
         var date = day.split('-').join('');
 
         var dataset = state.getSelectValue('datasetSelect');
 
-        displayMessage("retrieving data for " + dataset + " on " + day + ". Please standby...");
+        displayMessage("retrieving data for " + swdiGlobals.getDatasetLabel(dataset) + " on " + day + ". Please standby...");
  
         // reset UI while waiting on new annual summary data
         clearPoints();
@@ -714,7 +775,6 @@ require([
     }
 
 
-
     function drawPoints(results) {
         // console.log('inside draw points with '+results.events.length+' results.', results);
 
@@ -733,11 +793,15 @@ require([
                     longitude: event.SHAPE[0],
                     latitude: event.SHAPE[1]
                 },
-                symbol: myglobals.getMarkerSymbol(),
+                symbol: swdiGlobals.getMarkerSymbol(),
                 attributes: event
             })
             );
         });
+        // graphics.forEach(function(graphic){
+        //     console.log(graphic.geometry.longitude, graphic.geometry.latitude, graphic.attributes.ZTIME);
+        // });
+
         pointsLayer.addMany(graphics);
     }
 
@@ -783,85 +847,60 @@ require([
     }
 
 
-    // not currently used 
-    function updateFilter(featureLayerView, filterGeometry) {
-        console.log('inside updateFilter with ', featureLayerView, filterGeometry);
-
-        featureFilter = {
-          // autocasts to FeatureFilter
-          geometry: filterGeometry,
-          spatialRelationship: 'intersects',
-          distance: 1,
-          units: 'miles'
-        };
-        // set effect on excluded features
-        // make them gray and transparent
-        if (view) {
-          view.effect = {
-            filter: featureFilter,
-            excludedEffect: "grayscale(100%) opacity(30%)"
-          };
+    function displayMessage(message) {
+        var messagePanel = document.getElementById("messagePanel");
+        messagePanel.innerHTML = message;
+    }
+    
+    
+    function populateYearSelect() {
+        var currentYear = new Date().getFullYear();
+        var yearSelect = document.getElementById("yearSelect");
+        for (i = currentYear; i >= 1992; i--) {
+            var option = document.createElement("option");
+            option.text = i;
+            yearSelect.add(option);
         }
-      }
+        yearSelect.options[0].selected = true;
+    }
+    
+    function populateDatasetSelect() {
+        var datasetSelect = document.getElementById("datasetSelect");
+        var datasets = swdiGlobals.getDatasets();
+    
+        datasets.forEach(function(name){
+            var option = document.createElement("option");
+            option.text = swdiGlobals.getDatasetLabel(name);
+            option.value = name;
+            datasetSelect.add(option);
+        });
+        // default to the first entry
+        datasetSelect.options[0].selected = true;
+    }
+    
+    function  showGrid() {
+        document.getElementById('grid').style.setProperty('display', 'block');
+    }
+    
 
+    function hideGrid() {
+        document.getElementById('grid').style.setProperty('display', 'none');
+    }
+        
 });
 
 
 
 //
-// the follow don't have any JSAPI dependencies and are outside the module loading callback
+// the following have to be on the Window object temporarily because they are called directly from the HTML elements
 //
-var welcomeMessage = "Begin by searching for a location of interest by clicking on the map or entering an address or place...";
-
-function init() {
-    // console.log('inside init...');
-    populateYearSelect();
-    displayMessage(welcomeMessage);
+function hideDatasetHelp(event) {
+    document.getElementById('datasetHelpPanel').style.setProperty('display', 'none');
+    // keep it from triggering the handler for the parent DIV
+    event.stopPropagation();
 }
 
 
-function displayMessage(message) {
-    var messagePanel = document.getElementById("messagePanel");
-    messagePanel.innerHTML = message;
-}
-
-
-function populateYearSelect() {
-    var currentYear = new Date().getFullYear();
-    var yearSelect = document.getElementById("yearSelect");
-    for (i = currentYear; i >= 1992; i--) {
-        var option = document.createElement("option");
-        option.text = i;
-        yearSelect.add(option);
-    }
-    yearSelect.options[0].selected = true;
-}
-
-function showDatasetHelp() {
-    document.getElementById('datasetHelp').style.setProperty('display', 'block');
-}
-
-function hideDatasetHelp() {
-    document.getElementById('datasetHelp').style.setProperty('display', 'none');
-}
-
-function showSpinner() {
-    loadingDiv = document.getElementById('loadingDiv');
-    loadingDiv.style.display = 'inline-block';
-}
-
-function hideSpinner() {
-    loadingDiv = document.getElementById('loadingDiv');
-    loadingDiv.style.display = 'none';
-}
-
-function  showGrid() {
-    document.getElementById('grid').style.setProperty('display', 'block');
-}
-
-function hideGrid() {
-    document.getElementById('grid').style.setProperty('display', 'none');
-}
 
 
 

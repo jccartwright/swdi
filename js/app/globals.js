@@ -133,6 +133,17 @@ define(function(){
         }
     };
 
+    var datasets = [
+        {name: "nx3structure", label: "Filtered Storm Cells"},
+        {name: "nx3structure_all", label: "All Storm Cells"},
+        {name: "nx3hail", label: "Filtered Hail Signatures"},
+        {name: "nx3hail_all", label: "All Hail Signatures"},
+        {name: "nx3meso", label: "Mesocyclone Signatures"},
+        {name: "nx3mda", label: "Digital Mesocyclone Detection"},
+        {name: "nx3tvs", label: "Tornado Signatures"},
+        // {name: "plsr", label: "Preliminary Local Storm Reports"},
+        {name: "nldn", label: "Lightning Strikes"}
+    ]
     
     return {
         getName: function() {
@@ -149,6 +160,23 @@ define(function(){
 
         getColumns: function(dataset) {
             return(tableColumns[dataset]);
+        }, 
+
+        getWelcomeMessage: function() {
+            return ("Begin by searching for a location of interest by clicking on the map or entering an address or place...");
+        },
+
+        getDatasets: function() {
+            return datasets.map(x => x.name);
+        },
+
+        getDatasetLabel: function(name) {
+            var dataset = datasets.find((elem) => elem.name == name);
+            if(dataset) {
+                return(dataset.label);
+            } else {
+                console.error('invalid dataset name: '+name);
+            }
         }
     };
 });

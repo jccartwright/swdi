@@ -1,6 +1,6 @@
-define(["dojo/_base/declare", 'dojo/_base/lang'], function(declare, lang) { 
+define(["dojo/_base/declare"], function(declare) { 
     return declare(null, {
-        
+
         parseNx3structure: function(results) {
             /* 
             e.g.
@@ -8,13 +8,14 @@ define(["dojo/_base/declare", 'dojo/_base/lang'], function(declare, lang) {
                 {"MAX_REFLECT":"46","SHAPE":"POINT (-105.087486400579 39.6700222024728)","VIL":"7","WSR_ID":"KPUX","CELL_ID":"P4","ZTIME":"2019-05-18T00:09:58Z","AZIMUTH":"330","RANGE":"84"}
                 ]
             */
-           console.log('inside parseNx3Structure...');
+        //    console.log('inside parseNx3Structure...', results);
             var parsedData = [];
+            // create a bound function to pass to forEach so it can reference this object's method. could use Dojo lang.hitch here instead
             results.forEach(function(result) {
                 var coords = this.extractCoordsFromWKT(result.SHAPE)
                 result.SHAPE = coords;
                 parsedData.push(result)
-            })
+            }.bind(this));
         
             return({'events': parsedData, 'dataset':'nx3structure'});
         },
@@ -32,7 +33,7 @@ define(["dojo/_base/declare", 'dojo/_base/lang'], function(declare, lang) {
                 var coords = this.extractCoordsFromWKT(result.SHAPE)
                 result.SHAPE = coords;
                 parsedData.push(result)
-           })
+           }.bind(this))
         
            return({'events': parsedData, 'dataset':'nx3hail'});
         },
@@ -54,7 +55,7 @@ define(["dojo/_base/declare", 'dojo/_base/lang'], function(declare, lang) {
                 result.SHAPE = coords
                
                parsedData.push(result)
-           })
+           }.bind(this))
         
            return({'events': parsedData, 'dataset': 'nldn'});
         },
@@ -73,7 +74,7 @@ define(["dojo/_base/declare", 'dojo/_base/lang'], function(declare, lang) {
                 result.SHAPE = coords
                
                parsedData.push(result)
-           })
+           }.bind(this))
         
            return({'events': parsedData, 'dataset': 'nx3tvs'});
         },
@@ -93,17 +94,19 @@ define(["dojo/_base/declare", 'dojo/_base/lang'], function(declare, lang) {
         
                 result.SHAPE = coords;
                 parsedData.push(result)           
-           })
+           }.bind(this))
         
            return({'events': parsedData, 'dataset': 'nx3mda'});
         },
         
 
         extractCoordsFromWKT: function(wkt) {
+            // console.log('inside extractCoordsFromWKT with ', wkt);
             // bit of a hack to pull lon, lat from WKT string. depends on format like: "POINT (-105.083963633382 39.8283363414173)"
             var coords = wkt.substring(7, wkt.length - 1).split(' ');
             // TODO standardize the precision of the coords
             return(coords);
         }
+
     })
 });

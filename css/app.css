@@ -133,6 +133,23 @@ grid-area: map;
     background-color:#112E51
 }
 
+#datasetHelpPanel {
+    overflow: auto;
+    z-index: 99;
+    position: absolute;
+    top: 115px;
+    left: 325px;
+    padding: 10px;
+    border-radius: 15px;
+    background-color: rgba(0,0,0,0.75);
+    color: #fff;
+    width: 600px; 
+    height: 400px;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    display:none;
+}
+
 #introPanel {
     overflow: auto;
     z-index: 99;

@@ -17,6 +17,7 @@ require([
     "esri/geometry/support/webMercatorUtils",
     "app/globals",
     "app/DatasetParsers",
+    'dojo/_base/lang',
     "dojo/domReady!"
 ], function (
     declare,
@@ -35,13 +36,12 @@ require([
     Home, 
     Search, 
     webMercatorUtils, 
-    myglobals,
-    DatasetParsers
+    swdiGlobals,
+    DatasetParsers,
+    lang
     ) {
-    populateYearSelect();
 
-    // console.log('myglobals', myglobals);
-    // console.log(myglobals.getName());
+    var datasetParsers = new DatasetParsers();
     
     const CONUS_CENTROID = [-98.5795, 39.8283];
     // const gridDiv = document.getElementById("grid");
@@ -57,17 +57,15 @@ require([
         'datasetSelect': document.getElementById('datasetSelect'),
         'downloadFormats': document.getElementById('downloadFormats'),
         'yearSelect': document.getElementById('yearSelect'),
-        'resetButton': document.getElementById('resetButton')
+        'resetButton': document.getElementById('resetButton'),
+        'testButton': document.getElementById('testButton')
     }
     // TODO test that every element in domElements is defined?
     
     var state = {
         geolocation: null,
-        // the following two variables refer to the state of the dateSelect and not the calendar
+        // refers to the state of the dateSelect and not the calendar
         selectedDay: null,
-        currentDay: null,
-        year: null,
-        dataset: null,
         
         formatDate: function() {
             // reformat day value into yyyymmdd
@@ -83,44 +81,49 @@ require([
                 console.error('invalid elementName provided: '+elementName+' or element has no Options')
                 return undefined
             }
-        },
-
-        update: function() {
-            this.dataset = this.getSelectValue('datasetSelect')
-            var datasetSelect = domElements.datasetSelect;
-            this.dataset = datasetSelect.options[datasetSelect.selectedIndex].value;
-    
-            var yearSelect = domElements.yearSelect;
-            this.year = parseInt(yearSelect.options[yearSelect.selectedIndex > 0 ? yearSelect.selectedIndex: 0].value);
-    
-            var dateSelect = domElements.dateSelect;
-            if (dateSelect.options.length) {
-                this.currentDay = dateSelect.options[dateSelect.selectedIndex ? dateSelect.selectedIndex: 0].value;
-            }    
         }
     }
 
-
-    // debugging
-    state.update();
-    // console.log(state);
-
+    // initialization
+    populateYearSelect();
+    populateDatasetSelect();
+    displayMessage(swdiGlobals.getWelcomeMessage());
+    updatePeriodOfRecord(state.getSelectValue('datasetSelect'));
+    
     // setup button handlers
+    domElements.testButton.addEventListener("click", testButtonHandler);
     domElements.resetButton.addEventListener("click", resetButtonHandler);
     domElements.downloadFormats.addEventListener("change", downloadFormatChangeHandler);
     domElements.dateSelect.addEventListener("change", dateChangeHandler);
     domElements.datasetSelect.addEventListener("change", datasetChangeHandler);
     domElements.yearSelect.addEventListener("change", yearChangeHandler);
 
-    on(dom.byId('introBtn'), 'click', toggleIntroPanel);
-    on(dom.byId('introPanel'), 'click', toggleIntroPanel);
-    on(dom.byId('downloadBtn'), 'click', toggleDownloadPanel);
-    on(dom.byId('downloadPanel'), 'click', toggleDownloadPanel);
-    on(dom.byId('wsBtn'), 'click', function() {
+    document.getElementById('introBtn').addEventListener('click', toggleIntroPanel);
+    document.getElementById('introPanel').addEventListener('click', toggleIntroPanel);
+    document.getElementById('downloadBtn').addEventListener('click', toggleDownloadPanel);
+    document.getElementById('downloadPanel').addEventListener('click', toggleDownloadPanel);
+    document.getElementById('wsBtn').addEventListener('click', function() {
         window.open('https://www.ncdc.noaa.gov/swdiws');
     });
-    on(dom.byId('disclaimerBtn'), 'click', toggleDisclaimerPanel);
-    on(dom.byId('disclaimerPanel'), 'click', toggleDisclaimerPanel);
+    document.getElementById('disclaimerBtn').addEventListener('click', toggleDisclaimerPanel);
+    document.getElementById('disclaimerPanel').addEventListener('click', toggleDisclaimerPanel);
+    document.getElementById('disclaimerBtn').addEventListener('click', toggleDisclaimerPanel);
+    document.getElementById('datasetHelpPanel').addEventListener('click', toggleDatasetHelpPanel);
+    document.getElementById('datasetHelpBtn').addEventListener('click', toggleDatasetHelpPanel);
+    document.getElementById('datasetHelpCloseBtn').addEventListener('click', hideDatasetHelp);
+
+
+    function testButtonHandler() {
+        console.log('inside testButtonHandler...');
+        datasetParsers.myMethod();
+        
+        testAction();
+    }
+
+
+    function testAction() {
+        console.log('inside testAction...');
+    }
 
 
     function datasetChangeHandler() {
@@ -246,10 +249,6 @@ require([
     });
 
 
-    // initialization
-    updatePeriodOfRecord(state.getSelectValue('datasetSelect'));
-
-
     //  
     // supporting functions
     //
@@ -257,88 +256,12 @@ require([
         // console.log('inside createGrid with ', datasetName);
         // clearGrid();
 
-        // fields common to all datasets
-        var columns = [
-            {field: 'OBJECTID', label: 'OBJECTID', sortable: true, hidden: true },
-        ]
 
-        // add fields unique to given dataset
-        switch (datasetName) {
-            case 'nx3structure':
-            case 'nx3structure_all':
-                columns.push({field: 'ZTIME', label: 'Time', sortable: true});
-                columns.push({field: 'WSR_ID', label: 'WSR ID', sortable: true});
-                columns.push({field: 'CELL_ID', label: 'Cell ID', sortable: true});        
-                columns.push({field: 'AZIMUTH', label: 'Azimuth', sortable: true});
-                columns.push({field: 'MAX_REFLECT', label: 'Max Reflect', sortable: true});
-                columns.push({field: 'RANGE', label: 'Range', sortable: true});
-                columns.push({field: 'VIL', label: 'VIL', sortable: true});
-                break;
-
-            case 'nx3hail':
-            case 'nx3hail_all':
-                columns.push({field: 'ZTIME', label: 'Time', sortable: true});
-                columns.push({field: 'WSR_ID', label: 'WSR ID', sortable: true});
-                columns.push({field: 'CELL_ID', label: 'Cell ID', sortable: true});        
-                columns.push({field: 'PROB', label: 'Probability', sortable: true});
-                columns.push({field: 'MAXSIZE', label: 'Max Size', sortable: true});
-                columns.push({field: 'SEVPROB', label: 'Severe Probability', sortable: true});
-                break;
-
-            case 'nx3meso':
-                // have yet to find a response example
-                break;
-
-            case 'nx3mda':
-                columns.push({field: 'ZTIME', label: 'Time', sortable: true});
-                columns.push({field: 'WSR_ID', label: 'WSR ID', sortable: true});
-                columns.push({field: 'CELL_ID', label: 'Cell ID', sortable: true});        
-                columns.push({field: 'STR_RANK', label: 'Strength Ranking', sortable: true});
-                columns.push({field: 'MSI', label: 'MSI', sortable: true});
-                columns.push({field: 'LL_DV', label: 'Low Level DV (knots)', sortable: true});
-                columns.push({field: 'MOTION_KTS', label: 'Motion Speed (knots)', sortable: true});
-                columns.push({field: 'MAX_RV_KTS', label: 'Max RV (knots)', sortable: true});
-                columns.push({field: 'TVS', label: 'TVS (Y or N)', sortable: true});
-                columns.push({field: 'LL_BASE', label: 'Base (kft)', sortable: true});
-                columns.push({field: 'DEPTH_KFT', label: 'Depth (kft)', sortable: true});
-                columns.push({field: 'MOTION_DEG', label: 'Motion Direction (deg)', sortable: true});
-                columns.push({field: 'SCIT_ID', label: 'ID from SCIT algorithm (used in other NEXRAD products)', sortable: true});
-                columns.push({field: 'DPTH_STMRL', label: 'STMRL (percent)', sortable: true});
-                columns.push({field: 'MAX_RV_KFT', label: 'Max RV Height(kft)', sortable: true});
-                columns.push({field: 'AZIMUTH', label: 'Azimuth (deg)', sortable: true});
-                columns.push({field: 'LL_ROT_VEL', label: 'Low Level RV (knots)', sortable: true});
-                columns.push({field: 'RANGE', label: 'Range (nautical mi)', sortable: true});
-                break;
-
-            case 'nx3tvs':
-                columns.push({field: 'ZTIME', label: 'Time', sortable: true});
-                columns.push({field: 'WSR_ID', label: 'WSR ID', sortable: true});
-                columns.push({field: 'CELL_ID', label: 'Cell ID', sortable: true});        
-                columns.push({field: 'RANGE', label: 'Range (nautical mi)', sortable: true});
-                columns.push({field: 'AZIMUTH', label: 'Azimuth (deg)', sortable: true});
-                columns.push({field: 'MAX_SHEAR', label: 'Max Shear (e-3/s', sortable: true});
-                columns.push({field: 'MXDV', label: 'MXDV (knots)', sortable: true});
-                break;
-
-            // case 'plsr':
-            //     // have yet to find a response example
-            //     break;
-
-            case 'nldn':
-                columns.push({field: 'DATASOURCE', label: 'Datasource', sortable: true});
-                columns.push({field: 'DETECTOR_QUANTITY', label: 'Detector Quantity', sortable: true});
-                columns.push({field: 'MESSAGE_TYPE', label: 'Message Type', sortable: true});
-                columns.push({field: 'MILLISECONDS', label: 'Milliseconds', sortable: true});
-                columns.push({field: 'POLARITY', label: 'Polarity', sortable: true});
-                columns.push({field: 'STROKE_COUNT', label: 'Stroke Count', sortable: true});
-                columns.push({field: 'STROKE_STRENGTH', label: 'Stroke Strength', sortable: true});
-                columns.push({field: 'STROKE_TYPE', label: 'Stroke Type', sortable: true});
-                break;
-
-            default:
-            console.error('unrecognized dataset: ', dataset);
+        var columns = swdiGlobals.getColumns(datasetName);
+        if (! columns) {
+            console.error('unrecognized dataset: ', datasetName);
+            return;
         }
-
         // console.log('creating new grid with columns', columns);
 
         // hack to avoid "TypeError: Cannot read property 'element' of undefined"
@@ -409,6 +332,7 @@ require([
         }
         document.getElementById('downloadPanel').style.display = 'none';
         document.getElementById('disclaimerPanel').style.display = 'none';
+        document.getElementById('datasetHelpPanel').style.display = 'none';
         // document.getElementById('creditsPanel').style.display = 'none';
     }
 
@@ -422,6 +346,7 @@ require([
         }    
         document.getElementById('introPanel').style.display = 'none';
         document.getElementById('disclaimerPanel').style.display = 'none';
+        document.getElementById('datasetHelpPanel').style.display = 'none';
         // document.getElementById('creditsPanel').style.display = 'none';
     }
 
@@ -435,9 +360,23 @@ require([
         }
         document.getElementById('downloadPanel').style.display = 'none';
         document.getElementById('introPanel').style.display = 'none';
+        document.getElementById('datasetHelpPanel').style.display = 'none';
         // document.getElementById('creditsPanel').style.display = 'none';
     }
 
+
+    function toggleDatasetHelpPanel() {
+        var panel = document.getElementById('datasetHelpPanel');
+        if (panel.style.display == 'none') {
+            panel.style.display = 'inline-block';
+        } else {
+            panel.style.display = 'none';
+        }
+        document.getElementById('downloadPanel').style.display = 'none';
+        document.getElementById('introPanel').style.display = 'none';
+        document.getElementById('disclaimerPanel').style.display = 'none';
+        // document.getElementById('creditsPanel').style.display = 'none';
+    }
 
     function mapClickHandler(event) {
         // Get the coordinates of the click on the map view
@@ -510,7 +449,7 @@ require([
         var dataset = state.getSelectValue('datasetSelect');
         var startYear = parseInt(state.getSelectValue('yearSelect'));
         
-        displayMessage("retrieving summary data for " + dataset + ' in '+ startYear + ". Please standby...");
+        displayMessage("retrieving summary data for " + swdiGlobals.getDatasetLabel(dataset) + ' in '+ startYear + ". Please standby...");
         showSpinner();
         var summaryDataPromise = getSummaryData(point, dataset, startYear);
 
@@ -526,7 +465,7 @@ require([
             if (stats.totalEvents > 0) {
                 displayMessage("data retrieved - found " + stats.totalEvents + " events across " + stats.numberOfDays + " days.");
             } else {
-                displayMessage("no data found for " + dataset + ' in '+ startYear);
+                displayMessage("no data found for " + swdiGlobals.getDatasetLabel(dataset) + ' in '+ startYear);
                 hideGrid();
                 return;
             }
@@ -547,7 +486,7 @@ require([
         }, 
         function(error) {
             // promise failed, possibly due to web service unavailable
-            console.log('error in getting summary data', error);
+            console.error('error in getting summary data', error);
             displayMessage("Error retrieving data from server. Please try again later");
             hideSpinner();
         });
@@ -562,6 +501,7 @@ require([
 
         // e.g. https://www.ncdc.noaa.gov/swdiws/csv/nx3structure/20190101:20200101?stat=tilesum:-105,40
         var url = 'https://www.ncdc.noaa.gov/swdiws/json/' + dataset + '/' + startYear + '0101:' + endYear + '0101';
+        console.log(url);
         
         return(esriRequest(url, {
             query: {
@@ -666,7 +606,7 @@ require([
                     [minx, maxy]]
                 ]
               },
-            symbol: myglobals.getFillSymbol()
+            symbol: swdiGlobals.getFillSymbol()
         });
 
         // remove any existing graphics
@@ -682,7 +622,9 @@ require([
     function reset() {
         state.geolocation = null;
         domElements.datasetSelect.selectedIndex = 0;
+        domElements.yearSelect.selectedIndex = 0;
 
+        searchWidget.clear();
         view.goTo({ target: CONUS_CENTROID, zoom: 3 });
         view.graphics.removeAll();
         clearPoints();
@@ -694,16 +636,43 @@ require([
             grid.refresh(); 
             hideGrid();
         }
+
+        //hideSpinner();
     }
 
 
-
+    function showSpinner() {
+        // console.log('inside showSpinner...');
+        loadingDiv = document.getElementById('loadingDiv');
+        loadingDiv.style.display = 'inline-block';
+        lockControls(true);
+    }
+    
+    function hideSpinner() {
+        loadingDiv = document.getElementById('loadingDiv');
+        loadingDiv.style.display = 'none';
+        lockControls(false);
+    }
+    
+    
+    function lockControls(disabled) {
+        // console.log('inside lockControls with ', disabled);
+        ['yearSelect', 'datasetSelect', 'dateSelect', 'downloadFormats', 'resetButton'].forEach(function(elemName){
+            document.getElementById(elemName).disabled = disabled;
+        });
+    }
+    
 
     function clearGrid() {
-        if(grid){
-            dataStore.objectStore.data = {};
-            grid.set("collection", dataStore);
+        if (grid) {
+            grid._setColumns([]);
+            grid.refresh();
         }
+        
+        // if(grid){
+        //     dataStore.objectStore.data = {};
+        //     grid.set("collection", dataStore);
+        // }
     }
 
 
@@ -715,7 +684,14 @@ require([
 
         var dataset = state.getSelectValue('datasetSelect');
 
-        displayMessage("retrieving data for " + dataset + " on " + day + ". Please standby...");
+        displayMessage("retrieving data for " + swdiGlobals.getDatasetLabel(dataset) + " on " + day + ". Please standby...");
+ 
+        // reset UI while waiting on new annual summary data
+        clearPoints();
+        if (grid) {
+            grid.refresh();
+        }
+        // clearGrid();
 
         showSpinner();
 
@@ -772,37 +748,34 @@ require([
         switch (dataset) {
             case 'nx3structure':
             case 'nx3structure_all':
-                return(parseNx3structure(results));
+                return(datasetParsers.parseNx3structure(results));
 
             case 'nx3hail':
             case 'nx3hail_all':
-                    return(parseNx3hail(results));
+                    return(datasetParsers.parseNx3hail(results));
 
             case 'nx3meso':
                 // have yet to find a response example
                 break;
 
             case 'nx3mda':
-                return(parseNx3mda(results));
+                return(datasetParsers.parseNx3mda(results));
 
             case 'nx3tvs':
-                return(parseNx3tvs(results));
+                return(datasetParsers.parseNx3tvs(results));
 
             // case 'plsr':
             //     // have yet to find a response example
             //     break;
 
             case 'nldn':
-                return(parseNldn(results));
+                return(datasetParsers.parseNldn(results));
 
             default:
             console.error('unrecognized dataset: ', dataset);
             return;
         }
     }
-
-
-
 
 
     function drawPoints(results) {
@@ -823,11 +796,15 @@ require([
                     longitude: event.SHAPE[0],
                     latitude: event.SHAPE[1]
                 },
-                symbol: myglobals.getMarkerSymbol(),
+                symbol: swdiGlobals.getMarkerSymbol(),
                 attributes: event
             })
             );
         });
+        // graphics.forEach(function(graphic){
+        //     console.log(graphic.geometry.longitude, graphic.geometry.latitude, graphic.attributes.ZTIME);
+        // });
+
         pointsLayer.addMany(graphics);
     }
 
@@ -873,85 +850,60 @@ require([
     }
 
 
-    // not currently used 
-    function updateFilter(featureLayerView, filterGeometry) {
-        // console.log('inside updateFilter with ', featureLayerView, filterGeometry);
-
-        featureFilter = {
-          // autocasts to FeatureFilter
-          geometry: filterGeometry,
-          spatialRelationship: 'intersects',
-          distance: 1,
-          units: 'miles'
-        };
-        // set effect on excluded features
-        // make them gray and transparent
-        if (view) {
-          view.effect = {
-            filter: featureFilter,
-            excludedEffect: "grayscale(100%) opacity(30%)"
-          };
+    function displayMessage(message) {
+        var messagePanel = document.getElementById("messagePanel");
+        messagePanel.innerHTML = message;
+    }
+    
+    
+    function populateYearSelect() {
+        var currentYear = new Date().getFullYear();
+        var yearSelect = document.getElementById("yearSelect");
+        for (i = currentYear; i >= 1992; i--) {
+            var option = document.createElement("option");
+            option.text = i;
+            yearSelect.add(option);
         }
-      }
+        yearSelect.options[0].selected = true;
+    }
+    
+    function populateDatasetSelect() {
+        var datasetSelect = document.getElementById("datasetSelect");
+        var datasets = swdiGlobals.getDatasets();
+    
+        datasets.forEach(function(name){
+            var option = document.createElement("option");
+            option.text = swdiGlobals.getDatasetLabel(name);
+            option.value = name;
+            datasetSelect.add(option);
+        });
+        // default to the first entry
+        datasetSelect.options[0].selected = true;
+    }
+    
+    function  showGrid() {
+        document.getElementById('grid').style.setProperty('display', 'block');
+    }
+    
 
+    function hideGrid() {
+        document.getElementById('grid').style.setProperty('display', 'none');
+    }
+        
 });
 
 
 
 //
-// the follow don't have any JSAPI dependencies and are outside the module loading callback
+// the following have to be on the Window object temporarily because they are called directly from the HTML elements
 //
-var welcomeMessage = "Begin by searching for a location of interest by clicking on the map or entering an address or place...";
-
-function init() {
-    // console.log('inside init...');
-    populateYearSelect();
-    displayMessage(welcomeMessage);
+function hideDatasetHelp(event) {
+    document.getElementById('datasetHelpPanel').style.setProperty('display', 'none');
+    // keep it from triggering the handler for the parent DIV
+    event.stopPropagation();
 }
 
 
-function displayMessage(message) {
-    var messagePanel = document.getElementById("messagePanel");
-    messagePanel.innerHTML = message;
-}
-
-
-function populateYearSelect() {
-    var currentYear = new Date().getFullYear();
-    var yearSelect = document.getElementById("yearSelect");
-    for (i = currentYear; i >= 1992; i--) {
-        var option = document.createElement("option");
-        option.text = i;
-        yearSelect.add(option);
-    }
-    yearSelect.options[0].selected = true;
-}
-
-function showDatasetHelp() {
-    document.getElementById('datasetHelp').style.setProperty('display', 'block');
-}
-
-function hideDatasetHelp() {
-    document.getElementById('datasetHelp').style.setProperty('display', 'none');
-}
-
-function showSpinner() {
-    loadingDiv = document.getElementById('loadingDiv');
-    loadingDiv.style.display = 'inline-block';
-}
-
-function hideSpinner() {
-    loadingDiv = document.getElementById('loadingDiv');
-    loadingDiv.style.display = 'none';
-}
-
-function  showGrid() {
-    document.getElementById('grid').style.setProperty('display', 'block');
-}
-
-function hideGrid() {
-    document.getElementById('grid').style.setProperty('display', 'none');
-}
 
 
 

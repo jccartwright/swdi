@@ -18,25 +18,23 @@
      <style>
     </style>
 
-    <!-- <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8=" crossorigin="anonymous"></script> -->
-    <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script> -->
     <script>
-        var locationPath = location.pathname.replace(/\/[^\/]+$/, "");
+        var locationPath = location.pathname.replace(/\/[^\/]*$/, "");
         window.dojoConfig = {
             packages: [
             {
                 name: "app",
-                location: locationPath + "js/app"
+                location: locationPath + "/js/app"
             }
             ]
         };
     </script>
     <script src="https://js.arcgis.com/4.12/"></script>
+    <script src="js/test.js"></script>
     <script src="js/app.js"></script>
-    <script src="js/formatters.js"></script>
 </head>
 
-<body onload="init();">
+<body>
     <div class="wrapper">
 
         <!-- start header -->
@@ -77,43 +75,14 @@
                     <label class="input-group-text swdi-select" for="datasetSelect">Dataset</label>
                 </div>
                 <select style="background-color: grey;" class="custom-select swdi-select" id="datasetSelect">
-                    <option value="nx3structure">Filtered Storm Cells</option>
-                    <option value="nx3structure_all">All Storm Cells</option>
-                    <option value="nx3hail">Filtered Hail Signatures</option>
-                    <option value="nx3hail_all">All Hail Signatures</option>
-                    <option value="nx3meso">Mesocyclone Signatures</option>
-                    <option value="nx3mda">Digital Mesocyclone Detection</option>
-                    <option value="nx3tvs">Tornado Signatures</option>
-                    <!-- <option value="plsr">Preliminary Local Storm Reports</option> -->
-                    <option value="nldn">Lightning Strikes</option>
+                        <!-- options populated programatically -->
                 </select>
-                <div class="input-group-append" style="padding-left: 5px; display: inline-block">
-                    <label style="font-size: large" class="input-group-text swdi-select" for="datasetSelect"
-                        onclick="showDatasetHelp();">?</label>
+                <div id="datasetHelpBtn" class="input-group-append" style="padding-left: 5px; display: inline-block">
+                    <label style="font-size: large" class="input-group-text swdi-select" for="datasetSelect">?</label>
                 </div>
             </div>
 
             <div id="periodOfRecordDiv"></div>
-
-            <div id="datasetHelp" class="well" style="font-size:small; background-color: gray; display: none">
-                <div>
-                    <ul>
-                        <li>Filtered Storm Cells (Max Reflectivity >=45dBZ) from NEXRAD (Level-III Storm Structure
-                            Product)</li>
-                        <li>All Storm Cells from NEXRAD (Level-III Storm Structure Product)</li>
-                        <li>Filtered Hail Signatures (Max Size > 0 and Probability = 100%) from NEXRAD (Level-III Hail
-                            Product) </li>
-                        <li>All Hail Signatures from NEXRAD (Level-III Hail Product)</li>
-                        <li>Mesocyclone Signatures from NEXRAD (Level-III Meso Product)</li>
-                        <li>Digital Mesocyclone Detection Algorithm from NEXRAD (Level-III MDA Product)</li>
-                        <li>Tornado Signatures from NEXRAD (Level-III TVS Product)</li>
-                        <li>Preliminary Local Storm Reports from the NOAA National Weather Service</li>
-                        <li>Lightning Strikes from Vaisala NLDN</li>
-                    </ul>
-                    <a href="https://www.ncdc.noaa.gov/swdiws/csv/nx3structure" target="_blank" style="color:white">more information...</a>
-                </div>
-                <button type="button" class="btn btn-primary btn-sm" onclick="hideDatasetHelp();" style="margin-top:10px;">close</button>
-            </div>
 
             <div id="dateInputGroup" class="input-group" style="display: none;">
                 <div class="input-group-prepend" style="padding-right: 5px; display: inline-block">
@@ -153,6 +122,8 @@
           <div style="margin-top: 25px;margin-bottom: 50px;">
               <button id="resetButton" type="button" style='margin-left: 30px;'
                   class="btn btn-primary">Reset</button>
+                <button id="testButton" type="button" style='margin-left: 30px;'
+                  class="btn btn-primary">Test</button>
           </div>
 
         </div> <!-- end sidebar -->
@@ -208,6 +179,27 @@
          (FTP) <a href="ftp://ftp.ncdc.noaa.gov/pub/data/swdi">ftp://ftp.ncdc.noaa.gov/pub/data/swdi</a>
         <br><br>
         Please refer to the CHANGELOG.txt and KNOWN_ISSUES.txt files in the download directory for more information on the database.        
+    </div>
+
+    <div id="datasetHelpPanel" style="display: none">
+        <div>
+            <ul>
+                <li>Filtered Storm Cells (Max Reflectivity >=45dBZ) from NEXRAD (Level-III Storm Structure
+                    Product)</li>
+                <li>All Storm Cells from NEXRAD (Level-III Storm Structure Product)</li>
+                <li>Filtered Hail Signatures (Max Size > 0 and Probability = 100%) from NEXRAD (Level-III Hail
+                    Product) </li>
+                <li>All Hail Signatures from NEXRAD (Level-III Hail Product)</li>
+                <li>Mesocyclone Signatures from NEXRAD (Level-III Meso Product)</li>
+                <li>Digital Mesocyclone Detection Algorithm from NEXRAD (Level-III MDA Product)</li>
+                <li>Tornado Signatures from NEXRAD (Level-III TVS Product)</li>
+                <li>Preliminary Local Storm Reports from the NOAA National Weather Service</li>
+                <li>Lightning Strikes from Vaisala NLDN</li>
+            </ul>
+            <a href="https://www.ncdc.noaa.gov/swdiws/csv/nx3structure" target="_blank" style="color:white">more information...</a>
+        </div>
+        <button id="datasetHelpCloseBtn" type="button" class="btn btn-primary btn-sm" style="margin-top:10px;">close</button>
+        </div>
     </div>
 
     <div id="disclaimerPanel" style="display: none">

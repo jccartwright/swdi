@@ -57,13 +57,12 @@ require([
         'datasetSelect': document.getElementById('datasetSelect'),
         'downloadFormats': document.getElementById('downloadFormats'),
         'yearSelect': document.getElementById('yearSelect'),
-        'resetButton': document.getElementById('resetButton'),
-        'testButton': document.getElementById('testButton')
+        'resetButton': document.getElementById('resetButton')
     }
-    // TODO test that every element in domElements is defined?
     
     var state = {
         geolocation: null,
+        busy: false,
         // refers to the state of the dateSelect and not the calendar
         selectedDay: null,
         
@@ -91,7 +90,6 @@ require([
     updatePeriodOfRecord(state.getSelectValue('datasetSelect'));
     
     // setup button handlers
-    domElements.testButton.addEventListener("click", testButtonHandler);
     domElements.resetButton.addEventListener("click", resetButtonHandler);
     domElements.downloadFormats.addEventListener("change", downloadFormatChangeHandler);
     domElements.dateSelect.addEventListener("change", dateChangeHandler);
@@ -111,19 +109,6 @@ require([
     document.getElementById('datasetHelpPanel').addEventListener('click', toggleDatasetHelpPanel);
     document.getElementById('datasetHelpBtn').addEventListener('click', toggleDatasetHelpPanel);
     document.getElementById('datasetHelpCloseBtn').addEventListener('click', hideDatasetHelp);
-
-
-    function testButtonHandler() {
-        console.log('inside testButtonHandler...');
-        datasetParsers.myMethod();
-        
-        testAction();
-    }
-
-
-    function testAction() {
-        console.log('inside testAction...');
-    }
 
 
     function datasetChangeHandler() {
@@ -379,6 +364,12 @@ require([
     }
 
     function mapClickHandler(event) {
+        // console.log('inside mapClickHandler');
+        if (state.busy) {
+            alert('cannot select a new tile until current query completes');
+            console.log('cannot select a new tile until current query completes');
+            return;
+        }
         // Get the coordinates of the click on the map view
         setGeolocation(event.mapPoint.longitude, event.mapPoint.latitude);
 
@@ -570,6 +561,11 @@ require([
 
 
     function setGeolocation(longitude, latitude) {
+        if (state.busy) {
+            alert('cannot select a new tile until current query completes');
+            console.log('cannot select a new tile until current query completes');
+            return;
+        }
         var lat = Math.round(latitude * 1000) / 1000;
         var lon = Math.round(longitude * 1000) / 1000;
         addTileBoundary(lon, lat);
@@ -642,15 +638,17 @@ require([
 
 
     function showSpinner() {
-        // console.log('inside showSpinner...');
         loadingDiv = document.getElementById('loadingDiv');
         loadingDiv.style.display = 'inline-block';
+        state.busy = true;
         lockControls(true);
     }
+
     
     function hideSpinner() {
         loadingDiv = document.getElementById('loadingDiv');
         loadingDiv.style.display = 'none';
+        state.busy = false;
         lockControls(false);
     }
     

@@ -15,6 +15,7 @@ require([
     "esri/widgets/Home",
     "esri/widgets/Search",
     "esri/geometry/support/webMercatorUtils",
+    "esri/core/watchUtils",
     "app/globals",
     "app/DatasetParsers",
     'dojo/_base/lang',
@@ -36,6 +37,7 @@ require([
     Home, 
     Search, 
     webMercatorUtils, 
+    watchUtils,
     swdiGlobals,
     DatasetParsers,
     lang
@@ -169,6 +171,15 @@ require([
         center: CONUS_CENTROID
     });
     view.ui.move("zoom", "top-right");
+
+    watchUtils.whenTrue(view, "stationary", function() {
+        // console.log('map is idle');
+        state.busy = false;
+    });
+    watchUtils.whenFalse(view, "stationary", function() {
+        // console.log('map is busy');
+        state.busy = true;
+    });
 
     // tool to select tile location from map
     // view.ui.add("select-by-polygon", "top-left");
@@ -625,7 +636,7 @@ require([
         view.graphics.removeAll();
         clearPoints();
         clearDateSelect();
-        displayMessage(welcomeMessage);
+        displayMessage(swdiGlobals.getWelcomeMessage());
         state.selectedDay = null;
 
         if (grid) { 

@@ -239,6 +239,7 @@ require([
     });
     searchWidget.watch("resultGraphic", function (resultGraphic) {
         // resultGraphic can be null when resetting the Search widget
+        // TODO add check for state.busy?
         if (resultGraphic) {
             setGeolocation(resultGraphic.geometry.longitude, resultGraphic.geometry.latitude);
         }
@@ -572,11 +573,6 @@ require([
 
 
     function setGeolocation(longitude, latitude) {
-        if (state.busy) {
-            alert('cannot select a new tile until current query completes');
-            console.log('cannot select a new tile until current query completes');
-            return;
-        }
         var lat = Math.round(latitude * 1000) / 1000;
         var lon = Math.round(longitude * 1000) / 1000;
         addTileBoundary(lon, lat);
